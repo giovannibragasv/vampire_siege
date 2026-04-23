@@ -8,14 +8,17 @@ from src.settings import (
     SHOTGUN_COOLDOWN_MS,
     SHOTGUN_MAGAZINE,
     SHOTGUN_RELOAD_MS,
+    SHOTGUN_MAX_RANGE,
     C_SILVER,
     C_BONE,
 )
-from src.transforms.matrices import rotation_matrix, apply_transform
+from src.transforms.matrices import rotation_matrix, apply_transform, rotate_surface
 
 
 class Pellet:
     SIZE = 8
+    _BULLET_W = 14
+    _BULLET_H = 6
 
     def __init__(self, x, y, vx, vy):
         self.rect = pygame.Rect(
@@ -24,19 +27,35 @@ class Pellet:
         self.vx = vx
         self.vy = vy
         self.alive = True
-        self._angle = 0.0
+        self._ox = float(x)   # spawn origin for range check
+        self._oy = float(y)
+        # Pre-build bullet surface aligned to travel direction
+        self._surf = self._make_surf(vx, vy)
+
+    def _make_surf(self, vx, vy):
+        w, h = self._BULLET_W, self._BULLET_H
+        s = pygame.Surface((w, h), pygame.SRCALPHA)
+        # Silver casing
+        pygame.draw.ellipse(s, C_SILVER, (0, 0, w, h))
+        # Brighter tip (leading edge)
+        pygame.draw.ellipse(s, C_BONE, (w // 2, 1, w // 2 - 1, h - 2))
+        # Dark base rim
+        pygame.draw.ellipse(s, (120, 120, 140), (0, 1, w // 3, h - 2))
+        # Rotate to face velocity (R(θ) matrix via rotate_surface)
+        angle_deg = -math.degrees(math.atan2(vy, vx))
+        return rotate_surface(s, angle_deg)
 
     def update(self, dt, arena_inner):
-        # Translation: move pellet each frame
         self.rect.x += int(self.vx * dt / 16)
         self.rect.y += int(self.vy * dt / 16)
-        self._angle = (self._angle + 720 * dt / 1000) % 360
-        if not arena_inner.colliderect(self.rect):
+        dist = math.hypot(self.rect.centerx - self._ox,
+                          self.rect.centery - self._oy)
+        if not arena_inner.colliderect(self.rect) or dist >= SHOTGUN_MAX_RANGE:
             self.alive = False
 
     def draw(self, surface):
-        pygame.draw.ellipse(surface, C_SILVER, self.rect)
-        pygame.draw.circle(surface, C_BONE, self.rect.center, max(1, self.SIZE // 4))
+        r = self._surf.get_rect(center=self.rect.center)
+        surface.blit(self._surf, r)
 
 
 class Shotgun:
