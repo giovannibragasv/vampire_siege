@@ -28,8 +28,20 @@ class Arena:
     # Construction
     # ------------------------------------------------------------------
 
+    # Fountain corners (must match _build_fountains margin)
+    _FOUNTAIN_MARGIN = 160
+    _FOUNTAIN_CLEAR  = 110  # min distance from any fountain centre
+
     def _build_tombstones(self):
         from src.map.tombstone import Tombstone
+        m = self._FOUNTAIN_MARGIN
+        fountain_centres = [
+            (m,                m),
+            (ARENA_WIDTH  - m, m),
+            (m,                ARENA_HEIGHT - m),
+            (ARENA_WIDTH  - m, ARENA_HEIGHT - m),
+        ]
+
         tombstones   = []
         min_wall     = 100
         min_center   = 240
@@ -52,6 +64,9 @@ class Arena:
                 continue
             if any(math.hypot(cx - t.rect.centerx, cy - t.rect.centery) < min_between
                    for t in tombstones):
+                continue
+            if any(math.hypot(cx - fx, cy - fy) < self._FOUNTAIN_CLEAR
+                   for fx, fy in fountain_centres):
                 continue
             tombstones.append(Tombstone(cx, cy))
 
