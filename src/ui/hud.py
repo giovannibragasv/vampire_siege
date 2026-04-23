@@ -1,6 +1,6 @@
 import pygame
 from src.settings import (
-    SCREEN_WIDTH, SCREEN_HEIGHT,
+    SCREEN_WIDTH, SCREEN_HEIGHT, ARENA_WIDTH, ARENA_HEIGHT,
     HOLY_WATER_MAX, SHOTGUN_MAGAZINE,
     C_BONE, C_BLOOD_HIGH, C_GOLD, C_SILVER, C_HOLY_BLUE, C_DARK_PURPLE,
 )
@@ -28,6 +28,7 @@ class HUD:
         self._draw_portrait(surface)
         if self._wave_manager:
             self._draw_wave_info(surface)
+            self._draw_minimap(surface)
 
     # ------------------------------------------------------------------
     # HP bar
@@ -177,6 +178,65 @@ class HUD:
             lbl = self._font.render(text, True, color)
             surface.blit(lbl, (x, y))
             y += 22
+
+    # ------------------------------------------------------------------
+    # Mini-map (bottom-right corner)
+    # ------------------------------------------------------------------
+
+    _MAP_W = 160
+    _MAP_H = 90
+    _MAP_PAD = 10
+
+    def _draw_minimap(self, surface):
+        wm    = self._wave_manager
+        arena = wm.arena
+        mw, mh = self._MAP_W, self._MAP_H
+        ox = SCREEN_WIDTH  - mw - self._MAP_PAD
+        oy = SCREEN_HEIGHT - mh - self._MAP_PAD
+
+        def ws(wx, wy):
+            """World → minimap screen coords."""
+            return ox + int(wx * mw / ARENA_WIDTH), oy + int(wy * mh / ARENA_HEIGHT)
+
+        # Background panel
+        bg = pygame.Surface((mw, mh), pygame.SRCALPHA)
+        bg.fill((10, 0, 20, 180))
+        surface.blit(bg, (ox, oy))
+
+        # Inner arena tint
+        inner_scale_x = (ARENA_WIDTH  - 64) * mw / ARENA_WIDTH
+        inner_scale_y = (ARENA_HEIGHT - 64) * mh / ARENA_HEIGHT
+        pygame.draw.rect(surface, (30, 10, 50),
+                         (ox + int(32 * mw / ARENA_WIDTH),
+                          oy + int(32 * mh / ARENA_HEIGHT),
+                          int(inner_scale_x), int(inner_scale_y)))
+
+        # Tombstones — grey dots
+        for t in arena.tombstones:
+            sx, sy = ws(*t.rect.center)
+            pygame.draw.rect(surface, (90, 90, 100), (sx - 1, sy - 1, 3, 3))
+
+        # Fountains — blue dots
+        for f in arena.fountains:
+            sx, sy = ws(*f.rect.center)
+            pygame.draw.circle(surface, C_HOLY_BLUE, (sx, sy), 3)
+
+        # Enemies
+        for e in wm.enemies:
+            sx, sy = ws(*e.rect.center)
+            if hasattr(e, '_phase'):  # Dracula
+                pygame.draw.circle(surface, C_GOLD, (sx, sy), 4)
+            else:
+                pygame.draw.circle(surface, C_BLOOD_HIGH, (sx, sy), 2)
+
+        # Player — white dot with crosshair mark
+        px, py = ws(*self.player.rect.center)
+        pygame.draw.circle(surface, (255, 255, 255), (px, py), 3)
+        pygame.draw.line(surface, (255, 255, 255), (px - 5, py), (px + 5, py), 1)
+        pygame.draw.line(surface, (255, 255, 255), (px, py - 5), (px, py + 5), 1)
+
+        # Border
+        pygame.draw.rect(surface, C_GOLD, (ox, oy, mw, mh), 1)
 
     def _build_portraits(self):
         """Build three placeholder face portraits for the three HP stages."""
