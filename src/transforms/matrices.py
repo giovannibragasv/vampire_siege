@@ -89,10 +89,11 @@ def orbit_position(center_x, center_y, radius, angle_rad):
     then T(center) to move it into world space.
 
     Combined matrix: T · R
+    compose(t, r) → T @ R; applied to (radius,0): T(R(offset)) ✓
     """
     t = translation_matrix(center_x, center_y)
     r = rotation_matrix(angle_rad)
-    m = compose(r, t)
+    m = compose(t, r)
     return apply_transform(m, radius, 0)
 
 
@@ -109,7 +110,7 @@ def mirror_position(player_x, arena_center_x):
     t_in  = translation_matrix(-arena_center_x, 0)
     ref   = reflection_matrix_y()
     t_out = translation_matrix( arena_center_x, 0)
-    m = compose(t_in, ref, t_out)
+    m = compose(t_out, ref, t_in)
     rx, _ = apply_transform(m, player_x, 0)
     return rx
 
