@@ -1,9 +1,12 @@
 import pygame
 
 TITLE = "Vampire Siege"
-SCREEN_WIDTH = 1280
+SCREEN_WIDTH  = 1280
 SCREEN_HEIGHT = 720
 FPS = 60
+
+ARENA_WIDTH  = 1920
+ARENA_HEIGHT = 1080
 
 # --- Master palette (Castlevania/Stardew gothic) ---
 C_VOID       = (13,   0,  16)
@@ -18,14 +21,18 @@ C_HOLY_BLUE  = (65,  105, 225)
 C_HOLY_LIGHT = (176, 200, 255)
 C_WHITE      = (255, 255, 255)
 
-# --- Arena ---
-ARENA_WIDTH  = SCREEN_WIDTH
-ARENA_HEIGHT = SCREEN_HEIGHT
-
 # --- Player ---
 PLAYER_SPEED      = 4
 PLAYER_MAX_HP     = 100
-PLAYER_START_WEAPON = "shotgun"  # weapon equipped on start
+PLAYER_START_WEAPON = "shotgun"
+
+DODGE_DURATION_MS  = 280
+DODGE_COOLDOWN_MS  = 1400
+DODGE_SPEED_MULT   = 3.2
+
+# --- Map ---
+TOMBSTONE_COUNT    = 12
+WAVE_BANNER_MS     = 2200   # how long the "WAVE X" banner shows
 
 # --- Weapons ---
 SHOTGUN_PELLETS       = 5       # pellets per shot
