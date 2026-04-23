@@ -31,9 +31,11 @@ class Dracula(Enemy):
 
     # ------------------------------------------------------------------
 
-    def take_damage(self, amount):
+    def take_damage(self, amount, kbx=0.0, kby=0.0):
         self.hp -= amount
-        self._hit_timer = 120
+        self._hit_timer = 250
+        self._kbx = kbx * 0.4  # boss resists knockback
+        self._kby = kby * 0.4
         if self._phase == 1 and not self._p2_triggered:
             if self.hp <= self.max_hp * 0.5:
                 self._enter_phase2()

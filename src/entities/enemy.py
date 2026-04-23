@@ -21,23 +21,49 @@ class Enemy:
         self._hit_timer    = 0
         self._contact_cooldown = 0
         self._facing_right = True
+        self._kbx = 0.0  # knockback velocity x
+        self._kby = 0.0  # knockback velocity y
         self._surface = self._make_surface()
 
     # ------------------------------------------------------------------
 
-    def take_damage(self, amount):
+    def take_damage(self, amount, kbx=0.0, kby=0.0):
         self.hp -= amount
-        self._hit_timer = 120
+        self._hit_timer = 250
+        self._kbx = kbx
+        self._kby = kby
         if self.hp <= 0:
             self.alive = False
 
-    def _move_toward(self, tx, ty, dt):
+    def _move_toward(self, tx, ty, dt, tombstones=None):
         dx, dy = tx - self.rect.centerx, ty - self.rect.centery
         dist = math.hypot(dx, dy)
-        if dist > 0:
-            self.rect.x += int((dx / dist) * self.speed * dt / 16)
-            self.rect.y += int((dy / dist) * self.speed * dt / 16)
-        self._facing_right = dx >= 0
+        if dist == 0:
+            return
+
+        # Attraction toward target (normalized)
+        ax, ay = dx / dist, dy / dist
+
+        # Repulsion from nearby tombstones (potential field)
+        rx, ry = 0.0, 0.0
+        if tombstones:
+            AVOID_R = 80
+            for t in tombstones:
+                tdx = self.rect.centerx - t.rect.centerx
+                tdy = self.rect.centery - t.rect.centery
+                tdist = math.hypot(tdx, tdy) or 1
+                if tdist < AVOID_R:
+                    s = (AVOID_R - tdist) / AVOID_R
+                    rx += (tdx / tdist) * s * 2.5
+                    ry += (tdy / tdist) * s * 2.5
+
+        fx, fy = ax + rx, ay + ry
+        fmag = math.hypot(fx, fy) or 1
+        fx, fy = fx / fmag, fy / fmag
+
+        self.rect.x += int(fx * self.speed * dt / 16)
+        self.rect.y += int(fy * self.speed * dt / 16)
+        self._facing_right = fx >= 0
 
     def try_damage_player(self, player, dt):
         self._contact_cooldown = max(0, self._contact_cooldown - dt)
@@ -49,7 +75,16 @@ class Enemy:
 
     def update(self, dt, player, arena):
         px, py = player.rect.center
-        self._move_toward(px, py, dt)
+        self._move_toward(px, py, dt, arena.tombstones)
+
+        # Apply and decay knockback
+        if abs(self._kbx) > 0.1 or abs(self._kby) > 0.1:
+            self.rect.x += int(self._kbx * dt / 16)
+            self.rect.y += int(self._kby * dt / 16)
+            decay = 0.78 ** (dt / 16)
+            self._kbx *= decay
+            self._kby *= decay
+
         arena.clamp_entity(self.rect)
         arena.push_out_tombstones(self.rect)
         self.try_damage_player(player, dt)

@@ -76,8 +76,29 @@ class MirrorEnemy(Enemy):
                     self._enter_patrol()
                 else:
                     spd = MIRROR_DASH_SPEED * dt / 16
-                    self.rect.x += int((dx / dist) * spd)
-                    self.rect.y += int((dy / dist) * spd)
+                    nx, ny = dx / dist, dy / dist
+                    # Tombstone avoidance during dash
+                    rx, ry = 0.0, 0.0
+                    for t in arena.tombstones:
+                        tdx = self.rect.centerx - t.rect.centerx
+                        tdy = self.rect.centery - t.rect.centery
+                        tdist = math.hypot(tdx, tdy) or 1
+                        if tdist < 80:
+                            s = (80 - tdist) / 80
+                            rx += (tdx / tdist) * s * 2.5
+                            ry += (tdy / tdist) * s * 2.5
+                    fx, fy = nx + rx, ny + ry
+                    fmag = math.hypot(fx, fy) or 1
+                    self.rect.x += int((fx / fmag) * spd)
+                    self.rect.y += int((fy / fmag) * spd)
+
+        # Apply and decay knockback
+        if abs(self._kbx) > 0.1 or abs(self._kby) > 0.1:
+            self.rect.x += int(self._kbx * dt / 16)
+            self.rect.y += int(self._kby * dt / 16)
+            decay = 0.78 ** (dt / 16)
+            self._kbx *= decay
+            self._kby *= decay
 
         # Update bats
         for b in self.bats:
