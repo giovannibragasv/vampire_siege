@@ -141,6 +141,7 @@ class Game:
         if self.state not in (State.PLAYING, State.INFINITE):
             return
 
+        self._arena.update(dt)
         self._player.update(dt, self._arena)
         self._wave_manager.update(dt)
 

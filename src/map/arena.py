@@ -46,6 +46,8 @@ class Arena:
     def update(self, dt):
         for f in self.fountains:
             f.update(dt)
+        if self.cross_pickup and not self.cross_pickup.collected:
+            self.cross_pickup.update(dt)
 
     def draw(self, surface):
         # Background

@@ -69,14 +69,11 @@ class Player:
     def update(self, dt, arena):
         self._move(dt, arena)
         self._update_facing()
-        self._update_weapons(dt, arena)
         self._invincible_timer = max(0, self._invincible_timer - dt)
 
-        # Fountain refill
         if arena.try_refill_water(self.rect):
             self.holy_water.refill()
 
-        # Cross pickup
         if arena.try_collect_cross(self.rect):
             self.add_orbit_slot()
 
