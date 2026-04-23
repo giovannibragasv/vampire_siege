@@ -77,6 +77,8 @@ class Player:
         if arena.try_collect_cross(self.rect):
             self.add_orbit_slot()
 
+        arena.try_collect_heal(self)
+
     def _move(self, dt, arena):
         keys = pygame.key.get_pressed()
         dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - \

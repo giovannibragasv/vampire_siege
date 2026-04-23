@@ -17,6 +17,7 @@ class Arena:
         )
         self._build_fountains()
         self._build_cross_pickup()
+        self._build_heal_pickup()
 
     # ------------------------------------------------------------------
 
@@ -34,6 +35,11 @@ class Arena:
         from src.map.cross_pickup import CrossPickup
         self.cross_pickup = CrossPickup(ARENA_WIDTH // 2, ARENA_HEIGHT // 2)
 
+    def _build_heal_pickup(self):
+        from src.map.heal_pickup import HealPickup
+        # Offset slightly from cross so both are reachable
+        self.heal_pickup = HealPickup(ARENA_WIDTH // 2, ARENA_HEIGHT // 2 - 60)
+
     # ------------------------------------------------------------------
 
     def clamp_entity(self, rect):
@@ -48,6 +54,7 @@ class Arena:
             f.update(dt)
         if self.cross_pickup and not self.cross_pickup.collected:
             self.cross_pickup.update(dt)
+        self.heal_pickup.update(dt)
 
     def draw(self, surface):
         # Background
@@ -62,6 +69,7 @@ class Arena:
 
         if self.cross_pickup and not self.cross_pickup.collected:
             self.cross_pickup.draw(surface)
+        self.heal_pickup.draw(surface)
 
     def try_collect_cross(self, player_rect):
         if self.cross_pickup and not self.cross_pickup.collected:
@@ -69,6 +77,9 @@ class Arena:
                 self.cross_pickup.collected = True
                 return True
         return False
+
+    def try_collect_heal(self, player):
+        return self.heal_pickup.try_collect(player)
 
     def try_refill_water(self, player_rect):
         for f in self.fountains:
