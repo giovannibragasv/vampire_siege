@@ -43,24 +43,19 @@ class WaveManager:
             return (ARENA_WIDTH - m, random.randint(m, ARENA_HEIGHT - m))
 
     def _setup_wave(self, idx):
-        from src.entities.vampire import Vampire
-        from src.entities.fast_vampire import FastVampire
-        from src.entities.mirror_enemy import MirrorEnemy
-        from src.entities.dracula import Dracula
-
         defn = WAVE_DEFINITIONS[idx]
-        queue = []
 
-        for _ in range(defn["vampires"]):
-            queue.append(("vampire", None))
-        for _ in range(defn["fast_vampires"]):
-            queue.append(("fast", None))
+        normal = [("vampire", None)] * defn["vampires"] + \
+                 [("fast",    None)] * defn["fast_vampires"]
+        random.shuffle(normal)
+
+        queue = []
         if defn.get("has_mirror"):
-            queue.insert(0, ("mirror", None))
+            queue.append(("mirror", None))
+        queue.extend(normal)
         if defn.get("has_boss"):
             queue.append(("dracula", None))
 
-        random.shuffle([q for q in queue if q[0] not in ("mirror", "dracula")])
         self._spawn_queue = queue
 
     def _setup_infinite(self):

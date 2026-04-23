@@ -54,7 +54,7 @@ class Game:
 
         self.wave_index = 0
         self._arena = Arena()
-        self._player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        self._player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT * 3 // 4)
         self._wave_manager = WaveManager(self._player, self._arena, self.wave_index)
         self._hud = HUD(self._player)
         self.state = State.PLAYING
