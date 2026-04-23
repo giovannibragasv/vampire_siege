@@ -23,6 +23,7 @@ class Game:
         self.clock   = clock
         self.state   = State.MENU
         self.running = True
+        pygame.mouse.set_visible(False)
 
         self.wave_index = 0
         self._camera    = Camera()
@@ -205,6 +206,7 @@ class Game:
             self.screen.fill(C_VOID)
             self._draw_win()
 
+        self._draw_crosshair()
         pygame.display.flip()
 
     def _draw_world(self):
@@ -251,6 +253,28 @@ class Game:
     # ------------------------------------------------------------------
     # Screen overlays
     # ------------------------------------------------------------------
+
+    def _draw_crosshair(self):
+        mx, my = pygame.mouse.get_pos()
+        # Turn red-bright when hovering over an enemy
+        on_enemy = False
+        if self._wave_manager and self.state in (State.PLAYING, State.INFINITE):
+            wx, wy = mx + self._camera.x, my + self._camera.y
+            for e in self._wave_manager.enemies:
+                if e.rect.collidepoint(wx, wy):
+                    on_enemy = True
+                    break
+        color  = (255, 48, 48) if on_enemy else (200, 30, 30)
+        dot_r  = 3 if on_enemy else 2
+        arm    = 12
+        gap    = 4
+        thick  = 2
+        # Four arms with a gap at the centre
+        pygame.draw.line(self.screen, color, (mx - arm, my), (mx - gap, my), thick)
+        pygame.draw.line(self.screen, color, (mx + gap, my), (mx + arm, my), thick)
+        pygame.draw.line(self.screen, color, (mx, my - arm), (mx, my - gap), thick)
+        pygame.draw.line(self.screen, color, (mx, my + gap), (mx, my + arm), thick)
+        pygame.draw.circle(self.screen, color, (mx, my), dot_r, 1)
 
     def _draw_menu(self):
         f_big   = pygame.font.SysFont("serif", 72, bold=True)
