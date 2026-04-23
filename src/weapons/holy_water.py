@@ -3,8 +3,61 @@ import pygame
 from src.settings import (
     HOLY_WATER_MAX, HOLY_WATER_SPEED, HOLY_WATER_DAMAGE,
     HOLY_WATER_RADIUS, HOLY_WATER_COOLDOWN_MS,
+    HOLY_WATER_PUDDLE_MS, HOLY_WATER_PUDDLE_TICK, HOLY_WATER_PUDDLE_DMG,
     C_HOLY_BLUE, C_HOLY_LIGHT,
 )
+
+
+class WaterPuddle:
+    """Glowing DoT zone left behind after a splash dissipates."""
+
+    def __init__(self, cx, cy):
+        self.cx = cx
+        self.cy = cy
+        self.radius = HOLY_WATER_RADIUS
+        self._timer = 0.0
+        self._tick_timer = 0.0
+        self._pulse = 0.0
+        self.alive = True
+        self._hit_this_tick: set[int] = set()
+
+    def update(self, dt, enemies):
+        self._timer += dt
+        self._pulse = (self._pulse + dt / 380) % (2 * math.pi)
+        if self._timer >= HOLY_WATER_PUDDLE_MS:
+            self.alive = False
+            return
+
+        self._tick_timer += dt
+        if self._tick_timer >= HOLY_WATER_PUDDLE_TICK:
+            self._tick_timer = 0
+            self._hit_this_tick.clear()
+
+        for e in enemies:
+            if id(e) not in self._hit_this_tick:
+                ex, ey = e.rect.center
+                if math.hypot(ex - self.cx, ey - self.cy) <= self.radius:
+                    e.take_damage(HOLY_WATER_PUDDLE_DMG)
+                    self._hit_this_tick.add(id(e))
+
+    def draw(self, surface):
+        progress = self._timer / HOLY_WATER_PUDDLE_MS
+        base_a  = int(110 * (1 - progress))
+        inner_a = int(55  * (1 - progress))
+        r = self.radius
+        pulse_r = int(r * 0.55 + r * 0.12 * math.sin(self._pulse))
+
+        s = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
+        # Outer transparent fill
+        pygame.draw.circle(s, (*C_HOLY_BLUE, inner_a), (r + 2, r + 2), r)
+        # Pulsing inner pool
+        pygame.draw.circle(s, (*C_HOLY_BLUE, base_a), (r + 2, r + 2), pulse_r)
+        # Outer edge ring
+        pygame.draw.circle(s, (*C_HOLY_LIGHT, base_a), (r + 2, r + 2), r, 2)
+        # Inner bright ring
+        pygame.draw.circle(s, (*C_HOLY_LIGHT, min(255, base_a + 40)),
+                           (r + 2, r + 2), pulse_r, 1)
+        surface.blit(s, (self.cx - r - 2, self.cy - r - 2))
 
 
 class WaterSplash:
@@ -23,7 +76,6 @@ class WaterSplash:
 
     @property
     def current_radius(self):
-        # Scale: radius grows with each frame (scale transform on the circle)
         return int(HOLY_WATER_RADIUS * (self._frame + 1) / self.MAX_FRAMES)
 
     def update(self, dt, enemies):
@@ -51,8 +103,7 @@ class WaterSplash:
                            (r + 2, r + 2), r)
         pygame.draw.circle(splash_surf, (*C_HOLY_LIGHT, min(255, alpha + 40)),
                            (r + 2, r + 2), r, 2)
-        surface.blit(splash_surf,
-                     (self.cx - r - 2, self.cy - r - 2))
+        surface.blit(splash_surf, (self.cx - r - 2, self.cy - r - 2))
 
 
 class HolyWaterThrow:
@@ -77,9 +128,7 @@ class HolyWaterThrow:
             return
         self.x += self.vx * dt / 16
         self.y += self.vy * dt / 16
-        dx = self.tx - self.x
-        dy = self.ty - self.y
-        if math.hypot(dx, dy) < 8:
+        if math.hypot(self.tx - self.x, self.ty - self.y) < 8:
             self.alive = False
             self.splash = WaterSplash(int(self.x), int(self.y))
 
@@ -93,13 +142,14 @@ class HolyWaterThrow:
 
 
 class HolyWater:
-    """Manages the player's holy water supply, throws, and active splashes."""
+    """Manages the player's holy water supply, throws, splashes, and puddles."""
 
     def __init__(self):
-        self.charges = HOLY_WATER_MAX
+        self.charges  = HOLY_WATER_MAX
         self._cooldown = 0
-        self._throws:  list[HolyWaterThrow]  = []
-        self._splashes: list[WaterSplash]    = []
+        self._throws:  list[HolyWaterThrow] = []
+        self._splashes: list[WaterSplash]   = []
+        self._puddles:  list[WaterPuddle]   = []
 
     def refill(self):
         self.charges = HOLY_WATER_MAX
@@ -122,18 +172,27 @@ class HolyWater:
             if t.splash:
                 self._splashes.append(t.splash)
                 t.splash = None
-
         self._throws = [t for t in self._throws if t.alive]
 
         for s in self._splashes:
+            was_alive = s.alive
             s.update(dt, enemies)
+            # When splash finishes it leaves a puddle
+            if was_alive and not s.alive:
+                self._puddles.append(WaterPuddle(s.cx, s.cy))
         self._splashes = [s for s in self._splashes if s.alive]
 
+        for p in self._puddles:
+            p.update(dt, enemies)
+        self._puddles = [p for p in self._puddles if p.alive]
+
     def draw(self, surface):
-        for t in self._throws:
-            t.draw(surface)
+        for p in self._puddles:
+            p.draw(surface)
         for s in self._splashes:
             s.draw(surface)
+        for t in self._throws:
+            t.draw(surface)
 
     @property
     def ready(self):

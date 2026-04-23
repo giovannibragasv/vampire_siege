@@ -221,6 +221,9 @@ class Player:
         for cross in self._crosses:
             cross.draw(surface)
 
+        self.shotgun.draw(surface)
+        self.holy_water.draw(surface)
+
         # Dodge cooldown ring
         if self._dodge_cooldown > 0:
             frac = 1.0 - self._dodge_cooldown / DODGE_COOLDOWN_MS

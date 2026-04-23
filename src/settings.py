@@ -50,6 +50,10 @@ HOLY_WATER_RADIUS     = 64      # splash AoE radius in px
 HOLY_WATER_COOLDOWN_MS= 800
 FOUNTAIN_REFILL_MS    = 8000    # time for fountain to refill after drain
 
+HOLY_WATER_PUDDLE_MS  = 3200    # puddle lifetime after splash
+HOLY_WATER_PUDDLE_TICK= 600     # ms between puddle damage ticks
+HOLY_WATER_PUDDLE_DMG = 18      # damage per tick
+
 CROSS_ORBIT_RADIUS    = 80      # px from player center
 CROSS_ORBIT_SPEED_DEG = 120     # degrees per second
 CROSS_SPIN_SPEED_DEG  = 240     # self-rotation degrees per second
@@ -107,6 +111,8 @@ DRACULA_P2_HP_BONUS      = 400    # added to max HP on phase transition
 DRACULA_P2_SCALE         = 1.5
 DRACULA_P2_SPEED         = 1.8
 DRACULA_P2_TRANSFORM_MS  = 2800   # transformation animation duration
+DRACULA_P2_BAT_COUNT     = 5      # bats per summon in phase 2
+DRACULA_P2_BAT_INTERVAL  = 4500   # ms between bat summons
 
 # Mirror enemy
 MIRROR_HP             = 120
@@ -127,9 +133,9 @@ HEAL_PICKUP_RESPAWN_MS = 25_000
 # --- Wave definitions ---
 # each entry: normal vamps, fast vamps, has_boss, has_mirror
 WAVE_DEFINITIONS = [
-    {"vampires": 10, "fast_vampires": 0,  "has_boss": False, "has_mirror": False},
-    {"vampires": 15, "fast_vampires": 5,  "has_boss": False, "has_mirror": True},
-    {"vampires": 8,  "fast_vampires": 4,  "has_boss": True,  "has_mirror": True},
+    {"vampires": 10, "fast_vampires": 0,  "has_boss": False, "has_mirror": False, "hp_mult": 1.0},
+    {"vampires": 15, "fast_vampires": 5,  "has_boss": False, "has_mirror": True,  "hp_mult": 1.35},
+    {"vampires": 8,  "fast_vampires": 4,  "has_boss": True,  "has_mirror": True,  "hp_mult": 1.7},
 ]
 SPAWN_MARGIN = 40   # px from arena edge where enemies can spawn
 
