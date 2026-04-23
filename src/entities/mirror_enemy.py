@@ -1,4 +1,5 @@
 import math
+import random
 import pygame
 from src.settings import (
     MIRROR_HP, MIRROR_DAMAGE,
@@ -42,6 +43,14 @@ class MirrorEnemy(Enemy):
         self._conjure_angle   = 0.0   # orbiting particle angle
         self.bats: list[Bat]  = []
 
+        # Patrol jitter — smooth random offset applied on top of mirrored pos
+        self._jx = 0.0
+        self._jy = 0.0
+        self._jtx = 0.0   # jitter target x
+        self._jty = 0.0   # jitter target y
+        self._jitter_timer    = 0.0
+        self._jitter_interval = 160  # ms between new random targets
+
     # ------------------------------------------------------------------
     # State machine
     # ------------------------------------------------------------------
@@ -50,9 +59,19 @@ class MirrorEnemy(Enemy):
         px, py = player.rect.center
 
         if self._state == _State.PATROL:
-            # Mirror position across vertical centre
-            self.rect.centerx = int(mirror_position(px, ARENA_CENTER_X))
-            self.rect.centery = py
+            # Update jitter offset
+            self._jitter_timer += dt
+            if self._jitter_timer >= self._jitter_interval:
+                self._jitter_timer = 0
+                self._jtx = random.uniform(-28, 28)
+                self._jty = random.uniform(-28, 28)
+            lerp = min(1.0, dt / 70)
+            self._jx += (self._jtx - self._jx) * lerp
+            self._jy += (self._jty - self._jy) * lerp
+
+            # Mirror position across vertical centre + jitter offset
+            self.rect.centerx = int(mirror_position(px, ARENA_CENTER_X) + self._jx)
+            self.rect.centery = int(py + self._jy)
             self._patrol_timer += dt
             if self._patrol_timer >= MIRROR_PATROL_MS:
                 self._patrol_timer = 0
