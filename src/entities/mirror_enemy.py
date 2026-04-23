@@ -85,6 +85,7 @@ class MirrorEnemy(Enemy):
         self.bats = [b for b in self.bats if b.alive]
 
         arena.clamp_entity(self.rect)
+        arena.push_out_tombstones(self.rect)
         self.try_damage_player(player, dt)
         self._hit_timer = max(0, self._hit_timer - dt)
         self._contact_cooldown = max(0, self._contact_cooldown - dt)
