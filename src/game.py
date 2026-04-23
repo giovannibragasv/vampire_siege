@@ -165,6 +165,7 @@ class Game:
             return
 
         self._arena.update(dt)
+        self._player._cam_x = self._camera.x
         self._player.update(dt, self._arena)
         self._wave_manager.update(dt)
         self._camera.update(self._player.rect)

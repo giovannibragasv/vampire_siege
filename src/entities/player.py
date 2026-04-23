@@ -47,6 +47,7 @@ class Player:
         self._dodge_vx       = 0.0
         self._dodge_vy       = 0.0
         self._trail: list[tuple[int, int]] = []  # world positions for ghost trail
+        self._cam_x = 0
 
         self._surface = self._make_surface()
 
@@ -55,6 +56,7 @@ class Player:
     # ------------------------------------------------------------------
 
     def handle_event(self, event, cam_x=0, cam_y=0):
+        self._cam_x = cam_x
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
                 self._active_weapon = "shotgun"
@@ -142,9 +144,8 @@ class Player:
 
     def _update_facing(self):
         mx, _ = pygame.mouse.get_pos()
-        # Note: cam_x not available here; good enough for facing direction
-        # since the cursor offset is the same regardless of world offset
-        self._facing_right = mx >= PLAYER_SPEED  # always true for right side
+        screen_cx = self.rect.centerx - self._cam_x
+        self._facing_right = mx >= screen_cx
 
     # ------------------------------------------------------------------
     # Damage
