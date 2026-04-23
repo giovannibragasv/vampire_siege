@@ -32,7 +32,9 @@ SHOTGUN_PELLETS       = 5       # pellets per shot
 SHOTGUN_SPREAD_DEG    = 20      # total spread angle in degrees
 SHOTGUN_PELLET_SPEED  = 12
 SHOTGUN_PELLET_DAMAGE = 20
-SHOTGUN_COOLDOWN_MS   = 500
+SHOTGUN_COOLDOWN_MS   = 400
+SHOTGUN_MAGAZINE      = 6       # bursts before reload
+SHOTGUN_RELOAD_MS     = 2200
 
 HOLY_WATER_MAX        = 3
 HOLY_WATER_SPEED      = 8
@@ -98,11 +100,21 @@ DRACULA_P2_HP_BONUS = 400    # added to max HP on phase transition
 DRACULA_P2_SCALE    = 1.5
 DRACULA_P2_SPEED    = 1.8
 
-# Mirror enemy reflects player across vertical arena center
-MIRROR_SPEED  = VAMPIRE_SPEED  # matches player indirectly via position
-MIRROR_HP     = 80
-MIRROR_DAMAGE = 12
-ARENA_CENTER_X = ARENA_WIDTH // 2
+# Mirror enemy
+MIRROR_HP             = 120
+MIRROR_DAMAGE         = 12
+MIRROR_PATROL_MS      = 4500   # time in patrol before conjuring
+MIRROR_CONJURE_MS     = 1800   # charge-up duration (stop + purple glow)
+MIRROR_DASH_SPEED     = 9      # px per tick during dash
+MIRROR_DASH_DURATION_MS = 1800 # max dash duration before returning to patrol
+MIRROR_BAT_COUNT      = 7
+BAT_SPEED             = 3.5
+BAT_DAMAGE            = 10
+ARENA_CENTER_X        = ARENA_WIDTH // 2
+
+# Heal pickup
+HEAL_PICKUP_AMOUNT    = 35
+HEAL_PICKUP_RESPAWN_MS = 25_000
 
 # --- Wave definitions ---
 # each entry: normal vamps, fast vamps, has_boss, has_mirror
