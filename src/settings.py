@@ -42,6 +42,7 @@ SHOTGUN_PELLET_DAMAGE = 20
 SHOTGUN_COOLDOWN_MS   = 400
 SHOTGUN_MAGAZINE      = 6       # bursts before reload
 SHOTGUN_RELOAD_MS     = 2200
+SHOTGUN_MAX_RANGE     = 400     # px before pellets expire
 
 HOLY_WATER_MAX        = 3
 HOLY_WATER_SPEED      = 8
@@ -113,6 +114,18 @@ DRACULA_P2_SPEED         = 1.8
 DRACULA_P2_TRANSFORM_MS  = 2800   # transformation animation duration
 DRACULA_P2_BAT_COUNT     = 5      # bats per summon in phase 2
 DRACULA_P2_BAT_INTERVAL  = 4500   # ms between bat summons
+
+DRACULA_ENRAGE_THRESHOLD    = 0.15   # HP fraction that triggers enrage
+DRACULA_ENRAGE_DURATION_MS  = 5000
+DRACULA_ENRAGE_BAT_INTERVAL = 700    # ms between spiral bursts
+DRACULA_ENRAGE_BAT_COUNT    = 12     # bats per burst (full ring)
+
+# Melee stake
+STAKE_RANGE       = 95    # px sweep radius
+STAKE_DAMAGE      = 85
+STAKE_ARC_DEG     = 90    # sweep width
+STAKE_DURATION_MS = 270   # animation length
+STAKE_COOLDOWN_MS = 1400
 
 # Mirror enemy
 MIRROR_HP             = 120

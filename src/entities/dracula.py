@@ -9,6 +9,7 @@ from src.settings import (
 from src.transforms.matrices import scale_surface, rotation_matrix, apply_transform
 from src.entities.enemy import Enemy
 from src.entities.bat import Bat
+from src.entities.damage_number import DamageNumber
 
 
 class Dracula(Enemy):
@@ -45,12 +46,13 @@ class Dracula(Enemy):
     # ------------------------------------------------------------------
 
     def take_damage(self, amount, kbx=0.0, kby=0.0):
-        if self._transforming:
-            return  # immortal during animation
+        if self._transforming or self._enraging:
+            return  # immortal during both animations
         self.hp -= amount
         self._hit_timer = 250
         self._kbx = kbx * 0.4
         self._kby = kby * 0.4
+        self._damage_numbers.append(DamageNumber(*self.rect.center, amount))
         if self._phase == 1 and not self._p2_triggered:
             if self.hp <= self.max_hp * 0.5:
                 self._begin_transform()

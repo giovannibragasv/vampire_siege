@@ -1,6 +1,7 @@
 import math
 import pygame
 from src.settings import CONTACT_DAMAGE_COOLDOWN_MS
+from src.entities.damage_number import DamageNumber
 
 
 class Enemy:
@@ -23,6 +24,7 @@ class Enemy:
         self._facing_right = True
         self._kbx = 0.0  # knockback velocity x
         self._kby = 0.0  # knockback velocity y
+        self._damage_numbers: list[DamageNumber] = []
         self._surface = self._make_surface()
 
     # ------------------------------------------------------------------
@@ -32,6 +34,7 @@ class Enemy:
         self._hit_timer = 250
         self._kbx = kbx
         self._kby = kby
+        self._damage_numbers.append(DamageNumber(*self.rect.center, amount))
         if self.hp <= 0:
             self.alive = False
 
@@ -89,6 +92,9 @@ class Enemy:
         arena.push_out_tombstones(self.rect)
         self.try_damage_player(player, dt)
         self._hit_timer = max(0, self._hit_timer - dt)
+        for dn in self._damage_numbers:
+            dn.update(dt)
+        self._damage_numbers = [dn for dn in self._damage_numbers if dn.alive]
 
     def draw(self, surface):
         img = self._surface.copy()
@@ -98,6 +104,8 @@ class Enemy:
             img = pygame.transform.flip(img, True, False)
         surface.blit(img, self.rect)
         self._draw_hp_bar(surface)
+        for dn in self._damage_numbers:
+            dn.draw(surface)
 
     def _draw_hp_bar(self, surface):
         bar_w = self.WIDTH
