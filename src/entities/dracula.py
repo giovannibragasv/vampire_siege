@@ -1,12 +1,14 @@
 import pygame
+import math
 from src.settings import (
     DRACULA_HP, DRACULA_SPEED, DRACULA_DAMAGE,
     DRACULA_P2_HP_BONUS, DRACULA_P2_SCALE, DRACULA_P2_SPEED,
-    DRACULA_P2_TRANSFORM_MS,
+    DRACULA_P2_TRANSFORM_MS, DRACULA_P2_BAT_COUNT, DRACULA_P2_BAT_INTERVAL,
     C_BLOOD_MID, C_BLOOD_HIGH, C_BONE, C_GOLD,
 )
-from src.transforms.matrices import scale_surface
+from src.transforms.matrices import scale_surface, rotation_matrix, apply_transform
 from src.entities.enemy import Enemy
+from src.entities.bat import Bat
 
 
 class Dracula(Enemy):
@@ -33,6 +35,10 @@ class Dracula(Enemy):
         self._transforming = False
         self._transform_timer = 0.0
         self._transform_scale = 1.0   # animated from 1.0 → DRACULA_P2_SCALE
+
+        # Phase-2 bat summons
+        self.bats: list[Bat] = []
+        self._bat_timer = 0.0
 
     # ------------------------------------------------------------------
     # Damage / immortality
@@ -85,14 +91,43 @@ class Dracula(Enemy):
         if self._transforming:
             self._transform_timer += dt
             progress = min(1.0, self._transform_timer / DRACULA_P2_TRANSFORM_MS)
-            # Ease-in scale: slow start, snaps at end
             self._transform_scale = 1.0 + (DRACULA_P2_SCALE - 1.0) * (progress ** 2)
             if progress >= 1.0:
                 self._finish_transform()
-            # Stay still; just clamp to arena
             arena.clamp_entity(self.rect)
             return
+
         super().update(dt, player, arena)
+
+        if self._phase == 2:
+            self._update_bats(dt, player, arena)
+
+    def _update_bats(self, dt, player, arena):
+        self._bat_timer += dt
+        if self._bat_timer >= DRACULA_P2_BAT_INTERVAL:
+            self._bat_timer = 0
+            self._summon_bats(player)
+
+        for b in self.bats:
+            b.update(dt, arena.inner, player)
+        self.bats = [b for b in self.bats if b.alive]
+
+    def _summon_bats(self, player):
+        cx, cy = self.rect.center
+        px, py = player.rect.center
+        dx, dy = px - cx, py - cy
+        dist = math.hypot(dx, dy) or 1
+        base_vx, base_vy = dx / dist, dy / dist
+
+        spread_deg = 40
+        half = spread_deg / 2
+        step = spread_deg / max(DRACULA_P2_BAT_COUNT - 1, 1)
+
+        for i in range(DRACULA_P2_BAT_COUNT):
+            angle_rad = math.radians(-half + step * i)
+            rm = rotation_matrix(angle_rad)
+            rvx, rvy = apply_transform(rm, base_vx, base_vy)
+            self.bats.append(Bat(cx, cy, cx + rvx * 500, cy + rvy * 500))
 
     # ------------------------------------------------------------------
     # Draw
@@ -113,6 +148,9 @@ class Dracula(Enemy):
         draw_rect = img.get_rect(center=self.rect.center)
         surface.blit(img, draw_rect)
         self._draw_hp_bar(surface)
+
+        for b in self.bats:
+            b.draw(surface)
 
     def _draw_transform(self, surface):
         progress = self._transform_timer / DRACULA_P2_TRANSFORM_MS
