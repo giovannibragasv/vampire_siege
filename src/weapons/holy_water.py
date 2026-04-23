@@ -1,0 +1,140 @@
+import math
+import pygame
+from src.settings import (
+    HOLY_WATER_MAX, HOLY_WATER_SPEED, HOLY_WATER_DAMAGE,
+    HOLY_WATER_RADIUS, HOLY_WATER_COOLDOWN_MS,
+    C_HOLY_BLUE, C_HOLY_LIGHT,
+)
+
+
+class WaterSplash:
+    """3-frame expanding AoE — scale transform applied to radius each frame."""
+
+    FRAME_DURATION_MS = 120
+    MAX_FRAMES = 3
+
+    def __init__(self, cx, cy):
+        self.cx = cx
+        self.cy = cy
+        self._frame = 0
+        self._timer = 0
+        self.alive  = True
+        self._hit: set[int] = set()
+
+    @property
+    def current_radius(self):
+        # Scale: radius grows with each frame (scale transform on the circle)
+        return int(HOLY_WATER_RADIUS * (self._frame + 1) / self.MAX_FRAMES)
+
+    def update(self, dt, enemies):
+        self._timer += dt
+        if self._timer >= self.FRAME_DURATION_MS:
+            self._timer = 0
+            self._frame += 1
+            if self._frame >= self.MAX_FRAMES:
+                self.alive = False
+                return
+
+        r = self.current_radius
+        for e in enemies:
+            if id(e) not in self._hit:
+                ex, ey = e.rect.center
+                if math.hypot(ex - self.cx, ey - self.cy) <= r:
+                    e.take_damage(HOLY_WATER_DAMAGE)
+                    self._hit.add(id(e))
+
+    def draw(self, surface):
+        alpha = max(0, 180 - self._frame * 60)
+        r = self.current_radius
+        splash_surf = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
+        pygame.draw.circle(splash_surf, (*C_HOLY_BLUE, alpha),
+                           (r + 2, r + 2), r)
+        pygame.draw.circle(splash_surf, (*C_HOLY_LIGHT, min(255, alpha + 40)),
+                           (r + 2, r + 2), r, 2)
+        surface.blit(splash_surf,
+                     (self.cx - r - 2, self.cy - r - 2))
+
+
+class HolyWaterThrow:
+    """Projectile in flight — translates toward target, spawns WaterSplash on arrival."""
+
+    SIZE = 10
+
+    def __init__(self, ox, oy, tx, ty):
+        dx, dy = tx - ox, ty - oy
+        dist = math.hypot(dx, dy) or 1
+        self.vx = (dx / dist) * HOLY_WATER_SPEED
+        self.vy = (dy / dist) * HOLY_WATER_SPEED
+        self.x  = float(ox)
+        self.y  = float(oy)
+        self.tx = tx
+        self.ty = ty
+        self.alive = True
+        self.splash: WaterSplash | None = None
+
+    def update(self, dt):
+        if not self.alive:
+            return
+        self.x += self.vx * dt / 16
+        self.y += self.vy * dt / 16
+        dx = self.tx - self.x
+        dy = self.ty - self.y
+        if math.hypot(dx, dy) < 8:
+            self.alive = False
+            self.splash = WaterSplash(int(self.x), int(self.y))
+
+    def draw(self, surface):
+        if not self.alive:
+            return
+        pygame.draw.circle(surface, C_HOLY_BLUE,
+                           (int(self.x), int(self.y)), self.SIZE // 2)
+        pygame.draw.circle(surface, C_HOLY_LIGHT,
+                           (int(self.x), int(self.y)), self.SIZE // 2, 1)
+
+
+class HolyWater:
+    """Manages the player's holy water supply, throws, and active splashes."""
+
+    def __init__(self):
+        self.charges = HOLY_WATER_MAX
+        self._cooldown = 0
+        self._throws:  list[HolyWaterThrow]  = []
+        self._splashes: list[WaterSplash]    = []
+
+    def refill(self):
+        self.charges = HOLY_WATER_MAX
+
+    def handle_fire(self, player_cx, player_cy, target_x, target_y):
+        if self._cooldown > 0 or self.charges <= 0:
+            return False
+        self.charges -= 1
+        self._cooldown = HOLY_WATER_COOLDOWN_MS
+        self._throws.append(
+            HolyWaterThrow(player_cx, player_cy, target_x, target_y)
+        )
+        return True
+
+    def update(self, dt, enemies):
+        self._cooldown = max(0, self._cooldown - dt)
+
+        for t in self._throws:
+            t.update(dt)
+            if t.splash:
+                self._splashes.append(t.splash)
+                t.splash = None
+
+        self._throws = [t for t in self._throws if t.alive]
+
+        for s in self._splashes:
+            s.update(dt, enemies)
+        self._splashes = [s for s in self._splashes if s.alive]
+
+    def draw(self, surface):
+        for t in self._throws:
+            t.draw(surface)
+        for s in self._splashes:
+            s.draw(surface)
+
+    @property
+    def ready(self):
+        return self._cooldown <= 0 and self.charges > 0
