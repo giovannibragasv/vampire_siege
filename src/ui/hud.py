@@ -119,6 +119,19 @@ class HUD:
         lbl = self._font.render(txt, True, col)
         surface.blit(lbl, (20, 100))
 
+        # Stake indicator (right-click, always available)
+        stake = self.player.stake
+        ready_col = (210, 170, 70)
+        cd_col    = (110, 85, 35)
+        stk_lbl = self._font_small.render("[RMB] Stake", True,
+                                          ready_col if stake.ready else cd_col)
+        surface.blit(stk_lbl, (20, 120))
+        if not stake.ready:
+            bar_w = 80
+            pygame.draw.rect(surface, (40, 30, 15), (20, 134, bar_w, 4))
+            pygame.draw.rect(surface, (200, 160, 50),
+                             (20, 134, int(bar_w * stake.cooldown_frac), 4))
+
     # ------------------------------------------------------------------
     # Face portrait
     # ------------------------------------------------------------------

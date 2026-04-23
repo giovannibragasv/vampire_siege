@@ -11,6 +11,7 @@ from src.transforms.matrices import flip_surface
 from src.weapons.shotgun import Shotgun
 from src.weapons.holy_water import HolyWater
 from src.weapons.silver_cross import SilverCross
+from src.weapons.stake import Stake
 
 
 class Player:
@@ -32,6 +33,7 @@ class Player:
         self._active_weapon = "shotgun"
         self.shotgun    = Shotgun()
         self.holy_water = HolyWater()
+        self.stake      = Stake()
 
         # Orbiting crosses
         self.orbit_radius              = float(CROSS_ORBIT_RADIUS)
@@ -65,14 +67,17 @@ class Player:
             elif event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
                 self._try_dodge()
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
             wx, wy = mx + cam_x, my + cam_y
             cx, cy = self.rect.center
-            if self._active_weapon == "shotgun":
-                self.shotgun.handle_fire(cx, cy, wx, wy)
-            else:
-                self.holy_water.handle_fire(cx, cy, wx, wy)
+            if event.button == 1:
+                if self._active_weapon == "shotgun":
+                    self.shotgun.handle_fire(cx, cy, wx, wy)
+                else:
+                    self.holy_water.handle_fire(cx, cy, wx, wy)
+            elif event.button == 3:
+                self.stake.handle_fire(cx, cy, wx, wy)
 
     # ------------------------------------------------------------------
     # Update
@@ -185,6 +190,7 @@ class Player:
         self.shotgun.damage_mult = self.shotgun_damage_multiplier
         self.shotgun.update(dt, arena.inner, enemies)
         self.holy_water.update(dt, enemies)
+        self.stake.update(dt, enemies, cx, cy)
 
     # ------------------------------------------------------------------
     # Draw
@@ -221,6 +227,7 @@ class Player:
         for cross in self._crosses:
             cross.draw(surface)
 
+        self.stake.draw(surface, self.rect.centerx, self.rect.centery)
         self.shotgun.draw(surface)
         self.holy_water.draw(surface)
 
