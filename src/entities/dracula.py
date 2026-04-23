@@ -4,6 +4,8 @@ from src.settings import (
     DRACULA_HP, DRACULA_SPEED, DRACULA_DAMAGE,
     DRACULA_P2_HP_BONUS, DRACULA_P2_SCALE, DRACULA_P2_SPEED,
     DRACULA_P2_TRANSFORM_MS, DRACULA_P2_BAT_COUNT, DRACULA_P2_BAT_INTERVAL,
+    DRACULA_ENRAGE_THRESHOLD, DRACULA_ENRAGE_DURATION_MS,
+    DRACULA_ENRAGE_BAT_INTERVAL, DRACULA_ENRAGE_BAT_COUNT,
     C_BLOOD_MID, C_BLOOD_HIGH, C_BONE, C_GOLD,
 )
 from src.transforms.matrices import scale_surface, rotation_matrix, apply_transform
@@ -41,6 +43,12 @@ class Dracula(Enemy):
         self.bats: list[Bat] = []
         self._bat_timer = 0.0
 
+        # Enrage (phase-2 final stand)
+        self._enrage_triggered = False
+        self._enraging = False
+        self._enrage_timer = 0.0
+        self._enrage_bat_timer = 0.0
+
     # ------------------------------------------------------------------
     # Damage / immortality
     # ------------------------------------------------------------------
@@ -56,6 +64,10 @@ class Dracula(Enemy):
         if self._phase == 1 and not self._p2_triggered:
             if self.hp <= self.max_hp * 0.5:
                 self._begin_transform()
+                return
+        if self._phase == 2 and not self._enrage_triggered:
+            if self.hp <= self.max_hp * DRACULA_ENRAGE_THRESHOLD:
+                self._begin_enrage()
                 return
         if self.hp <= 0:
             self.alive = False
@@ -89,6 +101,40 @@ class Dracula(Enemy):
     # Update
     # ------------------------------------------------------------------
 
+    def _begin_enrage(self):
+        self._enrage_triggered = True
+        self._enraging = True
+        self._enrage_timer = 0.0
+        self._enrage_bat_timer = 0.0
+        self._hit_timer = 0
+
+    def _update_enrage(self, dt, player, arena):
+        self._enrage_timer += dt
+        self._enrage_bat_timer += dt
+
+        if self._enrage_bat_timer >= DRACULA_ENRAGE_BAT_INTERVAL:
+            self._enrage_bat_timer = 0
+            self._summon_spiral()
+
+        for b in self.bats:
+            b.update(dt, arena.inner, player)
+        self.bats = [b for b in self.bats if b.alive]
+
+        arena.clamp_entity(self.rect)
+
+        if self._enrage_timer >= DRACULA_ENRAGE_DURATION_MS:
+            self.alive = False
+
+    def _summon_spiral(self):
+        cx, cy = self.rect.center
+        count = DRACULA_ENRAGE_BAT_COUNT
+        base_angle = math.radians(self._enrage_timer * 0.18)
+        for i in range(count):
+            angle = base_angle + 2 * math.pi * i / count
+            rm = rotation_matrix(angle)
+            dx, dy = apply_transform(rm, 600.0, 0.0)
+            self.bats.append(Bat(cx, cy, int(cx + dx), int(cy + dy)))
+
     def update(self, dt, player, arena):
         if self._transforming:
             self._transform_timer += dt
@@ -97,6 +143,10 @@ class Dracula(Enemy):
             if progress >= 1.0:
                 self._finish_transform()
             arena.clamp_entity(self.rect)
+            return
+
+        if self._enraging:
+            self._update_enrage(dt, player, arena)
             return
 
         super().update(dt, player, arena)
@@ -138,6 +188,10 @@ class Dracula(Enemy):
     def draw(self, surface):
         if self._transforming:
             self._draw_transform(surface)
+            return
+
+        if self._enraging:
+            self._draw_enrage(surface)
             return
 
         img = self._surface.copy()
@@ -183,6 +237,25 @@ class Dracula(Enemy):
             lbl  = font.render("TRANSFORMING…", True, C_GOLD)
             surface.blit(lbl, lbl.get_rect(centerx=self.rect.centerx,
                                            bottom=self.rect.top - 14))
+
+    def _draw_enrage(self, surface):
+        img = self._surface.copy()
+        # Rapid crimson pulse — faster flicker than transform
+        if (self._enrage_timer // 60) % 2 == 0:
+            img.fill((255, 0, 0, 200), special_flags=pygame.BLEND_RGBA_ADD)
+        # Slightly oversized to feel swollen with rage
+        img = scale_surface(img, DRACULA_P2_SCALE * 1.08, DRACULA_P2_SCALE * 1.08)
+        draw_rect = img.get_rect(center=self.rect.center)
+        surface.blit(img, draw_rect)
+        self._draw_hp_bar(surface)
+        for b in self.bats:
+            b.draw(surface)
+        # Blinking "ENRAGED!" label
+        if (self._enrage_timer // 280) % 2 == 0:
+            font = pygame.font.SysFont("serif", 20, bold=True)
+            lbl  = font.render("ENRAGED!", True, (255, 40, 40))
+            surface.blit(lbl, lbl.get_rect(centerx=self.rect.centerx,
+                                           bottom=self.rect.top - 18))
 
     # ------------------------------------------------------------------
     # HP bar (wider for boss)
