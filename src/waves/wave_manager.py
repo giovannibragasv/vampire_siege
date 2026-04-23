@@ -5,6 +5,7 @@ from src.settings import (
     ARENA_WIDTH, ARENA_HEIGHT,
     VAMPIRE_HP, FAST_VAMPIRE_HP,
 )
+import math as _math
 from src.entities.blood_decal import BloodDecal
 
 
@@ -159,6 +160,18 @@ class WaveManager:
             return
 
         e._score_value = _SCORE_VALUES.get(kind, 10)
+
+        # HP scaling: per-wave multiplier or infinite time ramp
+        if self.wave_index is not None:
+            hp_mult = WAVE_DEFINITIONS[self.wave_index].get("hp_mult", 1.0)
+        else:
+            # Every 2 minutes in infinite mode add 15% more HP
+            mins = self.wave_time_ms / 120_000
+            hp_mult = 1.0 + mins * 0.15
+        scaled = int(e.hp * hp_mult)
+        e.hp = scaled
+        e.max_hp = scaled
+
         self.enemies.append(e)
 
     def draw(self, surface):
