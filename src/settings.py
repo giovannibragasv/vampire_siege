@@ -103,9 +103,10 @@ FAST_VAMPIRE_DAMAGE = 8
 DRACULA_SPEED       = 1.2
 DRACULA_HP          = 600
 DRACULA_DAMAGE      = 25
-DRACULA_P2_HP_BONUS = 400    # added to max HP on phase transition
-DRACULA_P2_SCALE    = 1.5
-DRACULA_P2_SPEED    = 1.8
+DRACULA_P2_HP_BONUS      = 400    # added to max HP on phase transition
+DRACULA_P2_SCALE         = 1.5
+DRACULA_P2_SPEED         = 1.8
+DRACULA_P2_TRANSFORM_MS  = 2800   # transformation animation duration
 
 # Mirror enemy
 MIRROR_HP             = 120
