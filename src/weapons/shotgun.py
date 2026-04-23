@@ -1,10 +1,15 @@
 import math
 import pygame
 from src.settings import (
-    SHOTGUN_PELLETS, SHOTGUN_SPREAD_DEG, SHOTGUN_PELLET_SPEED,
-    SHOTGUN_PELLET_DAMAGE, SHOTGUN_COOLDOWN_MS,
-    SHOTGUN_MAGAZINE, SHOTGUN_RELOAD_MS,
-    C_SILVER, C_BONE,
+    SHOTGUN_PELLETS,
+    SHOTGUN_SPREAD_DEG,
+    SHOTGUN_PELLET_SPEED,
+    SHOTGUN_PELLET_DAMAGE,
+    SHOTGUN_COOLDOWN_MS,
+    SHOTGUN_MAGAZINE,
+    SHOTGUN_RELOAD_MS,
+    C_SILVER,
+    C_BONE,
 )
 from src.transforms.matrices import rotation_matrix, apply_transform
 
@@ -13,8 +18,9 @@ class Pellet:
     SIZE = 8
 
     def __init__(self, x, y, vx, vy):
-        self.rect = pygame.Rect(x - self.SIZE // 2, y - self.SIZE // 2,
-                                self.SIZE, self.SIZE)
+        self.rect = pygame.Rect(
+            x - self.SIZE // 2, y - self.SIZE // 2, self.SIZE, self.SIZE
+        )
         self.vx = vx
         self.vy = vy
         self.alive = True
@@ -30,8 +36,7 @@ class Pellet:
 
     def draw(self, surface):
         pygame.draw.ellipse(surface, C_SILVER, self.rect)
-        pygame.draw.circle(surface, C_BONE,
-                           self.rect.center, max(1, self.SIZE // 4))
+        pygame.draw.circle(surface, C_BONE, self.rect.center, max(1, self.SIZE // 4))
 
 
 class Shotgun:
@@ -42,11 +47,11 @@ class Shotgun:
     """
 
     def __init__(self):
-        self._cooldown   = 0
+        self._cooldown = 0
         self.pellets: list[Pellet] = []
         self.damage_mult = 1.0
-        self.ammo        = SHOTGUN_MAGAZINE
-        self._reloading  = False
+        self.ammo = SHOTGUN_MAGAZINE
+        self._reloading = False
         self._reload_timer = 0
 
     # -- public state for HUD --
@@ -78,8 +83,8 @@ class Shotgun:
         base_vx = (dx / dist) * SHOTGUN_PELLET_SPEED
         base_vy = (dy / dist) * SHOTGUN_PELLET_SPEED
 
-        half   = SHOTGUN_SPREAD_DEG / 2
-        step   = SHOTGUN_SPREAD_DEG / max(SHOTGUN_PELLETS - 1, 1)
+        half = SHOTGUN_SPREAD_DEG / 2
+        step = SHOTGUN_SPREAD_DEG / max(SHOTGUN_PELLETS - 1, 1)
         damage = int(SHOTGUN_PELLET_DAMAGE * self.damage_mult)
 
         for i in range(SHOTGUN_PELLETS):
@@ -96,14 +101,17 @@ class Shotgun:
         if self._reloading:
             self._reload_timer += dt
             if self._reload_timer >= SHOTGUN_RELOAD_MS:
-                self._reloading   = False
-                self.ammo         = SHOTGUN_MAGAZINE
+                self._reloading = False
+                self.ammo = SHOTGUN_MAGAZINE
         for p in self.pellets:
             p.update(dt, arena_inner)
             if p.alive:
                 for e in enemies:
                     if p.rect.colliderect(e.rect):
-                        e.take_damage(getattr(p, "damage", SHOTGUN_PELLET_DAMAGE))
+                        pmag = math.hypot(p.vx, p.vy) or 1
+                        kbx = (p.vx / pmag) * 7
+                        kby = (p.vy / pmag) * 7
+                        e.take_damage(getattr(p, "damage", SHOTGUN_PELLET_DAMAGE), kbx, kby)
                         p.alive = False
                         break
         self.pellets = [p for p in self.pellets if p.alive]
