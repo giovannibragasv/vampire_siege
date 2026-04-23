@@ -5,6 +5,15 @@ from src.settings import (
     ARENA_WIDTH, ARENA_HEIGHT,
     VAMPIRE_HP, FAST_VAMPIRE_HP,
 )
+from src.entities.blood_decal import BloodDecal
+
+
+_SCORE_VALUES = {
+    "vampire": 10,
+    "fast":    15,
+    "mirror":  50,
+    "dracula": 200,
+}
 
 
 class WaveManager:
@@ -19,6 +28,11 @@ class WaveManager:
         self._cleared = False
         self._infinite_timer = 0
         self._infinite_interval = 20_000
+
+        self.score = 0
+        self.kills = 0
+        self._decals: list[BloodDecal] = []
+        self.wave_time_ms = 0  # elapsed time in current wave
 
         # Give the arena a back-reference so player weapons can reach enemies
         arena._wave_manager_ref = self
@@ -62,8 +76,6 @@ class WaveManager:
         self._spawn_queue = []
 
     def _enqueue_infinite_wave(self):
-        from src.entities.vampire import Vampire
-        from src.entities.fast_vampire import FastVampire
         count_v = random.randint(8, 16)
         count_f = random.randint(3, 8)
         self._spawn_queue += [("vampire", None)] * count_v
@@ -74,7 +86,12 @@ class WaveManager:
     def wave_cleared(self):
         return self._cleared
 
+    def enemies_remaining(self):
+        return len(self.enemies) + len(self._spawn_queue)
+
     def update(self, dt):
+        self.wave_time_ms += dt
+
         # Spawn from queue
         self._spawn_timer += dt
         if self._spawn_timer >= self._spawn_interval and self._spawn_queue:
@@ -88,14 +105,29 @@ class WaveManager:
                 self._infinite_timer = 0
                 self._enqueue_infinite_wave()
 
-        # Update all enemies
+        # Snapshot alive state before updates to detect deaths this frame
+        alive_before = {id(e): e.alive for e in self.enemies}
+
         for e in self.enemies:
             e.update(dt, self.player, self.arena)
 
         # Weapon collision (via player method)
         self.player.update_weapons_with_enemies(dt, self.arena, self.enemies)
 
+        # Detect deaths: spawn decals and accumulate score
+        for e in self.enemies:
+            if alive_before.get(id(e), True) and not e.alive:
+                cx, cy = e.rect.center
+                self._decals.append(BloodDecal(cx, cy))
+                self.kills += 1
+                self.score += getattr(e, "_score_value", 10)
+
         self.enemies = [e for e in self.enemies if e.alive]
+
+        # Update and cull decals
+        for d in self._decals:
+            d.update(dt)
+        self._decals = [d for d in self._decals if d.alive]
 
         # Check cleared
         if (self.wave_index is not None and
@@ -115,15 +147,22 @@ class WaveManager:
 
         if kind == "vampire":
             cx, cy = self._spawn_point()
-            self.enemies.append(Vampire(cx, cy))
+            e = Vampire(cx, cy)
         elif kind == "fast":
             cx, cy = self._spawn_point()
-            self.enemies.append(FastVampire(cx, cy))
+            e = FastVampire(cx, cy)
         elif kind == "mirror":
-            self.enemies.append(MirrorEnemy(px, py))
+            e = MirrorEnemy(px, py)
         elif kind == "dracula":
-            self.enemies.append(Dracula(ARENA_WIDTH // 2, ARENA_HEIGHT // 2))
+            e = Dracula(ARENA_WIDTH // 2, ARENA_HEIGHT // 2)
+        else:
+            return
+
+        e._score_value = _SCORE_VALUES.get(kind, 10)
+        self.enemies.append(e)
 
     def draw(self, surface):
+        for d in self._decals:
+            d.draw(surface)
         for e in self.enemies:
             e.draw(surface)
