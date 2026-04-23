@@ -2,7 +2,9 @@ import math
 import pygame
 from src.settings import (
     SHOTGUN_PELLETS, SHOTGUN_SPREAD_DEG, SHOTGUN_PELLET_SPEED,
-    SHOTGUN_PELLET_DAMAGE, SHOTGUN_COOLDOWN_MS, C_SILVER, C_BONE,
+    SHOTGUN_PELLET_DAMAGE, SHOTGUN_COOLDOWN_MS,
+    SHOTGUN_MAGAZINE, SHOTGUN_RELOAD_MS,
+    C_SILVER, C_BONE,
 )
 from src.transforms.matrices import rotation_matrix, apply_transform
 
@@ -40,15 +42,33 @@ class Shotgun:
     """
 
     def __init__(self):
-        self._cooldown = 0
+        self._cooldown   = 0
         self.pellets: list[Pellet] = []
         self.damage_mult = 1.0
+        self.ammo        = SHOTGUN_MAGAZINE
+        self._reloading  = False
+        self._reload_timer = 0
+
+    # -- public state for HUD --
+    @property
+    def reloading(self):
+        return self._reloading
+
+    @property
+    def reload_progress(self):
+        if not self._reloading:
+            return 1.0
+        return min(1.0, self._reload_timer / SHOTGUN_RELOAD_MS)
 
     def handle_fire(self, player_cx, player_cy, target_x, target_y):
-        if self._cooldown > 0:
+        if self._cooldown > 0 or self._reloading or self.ammo <= 0:
             return
         self._spawn_pellets(player_cx, player_cy, target_x, target_y)
         self._cooldown = SHOTGUN_COOLDOWN_MS
+        self.ammo -= 1
+        if self.ammo <= 0:
+            self._reloading = True
+            self._reload_timer = 0
 
     def _spawn_pellets(self, ox, oy, tx, ty):
         dx, dy = tx - ox, ty - oy
@@ -73,6 +93,11 @@ class Shotgun:
 
     def update(self, dt, arena_inner, enemies):
         self._cooldown = max(0, self._cooldown - dt)
+        if self._reloading:
+            self._reload_timer += dt
+            if self._reload_timer >= SHOTGUN_RELOAD_MS:
+                self._reloading   = False
+                self.ammo         = SHOTGUN_MAGAZINE
         for p in self.pellets:
             p.update(dt, arena_inner)
             if p.alive:
@@ -89,4 +114,4 @@ class Shotgun:
 
     @property
     def ready(self):
-        return self._cooldown <= 0
+        return self._cooldown <= 0 and not self._reloading and self.ammo > 0
