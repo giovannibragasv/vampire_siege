@@ -9,8 +9,9 @@ from src.settings import (
 class HUD:
     PORTRAIT_SIZE = 72
 
-    def __init__(self, player):
-        self.player = player
+    def __init__(self, player, wave_manager=None):
+        self.player       = player
+        self._wave_manager = wave_manager
         self._font       = pygame.font.SysFont("serif", 18, bold=True)
         self._font_small = pygame.font.SysFont("serif", 14)
         self._portraits  = self._build_portraits()
@@ -25,6 +26,8 @@ class HUD:
         self._draw_water_charges(surface)
         self._draw_weapon_indicator(surface)
         self._draw_portrait(surface)
+        if self._wave_manager:
+            self._draw_wave_info(surface)
 
     # ------------------------------------------------------------------
     # HP bar
@@ -139,6 +142,41 @@ class HUD:
         border_color = [C_GOLD, C_BLOOD_HIGH, (220, 50, 50)][stage]
         pygame.draw.rect(surface, border_color,
                          (px, py, self.PORTRAIT_SIZE, self.PORTRAIT_SIZE), 2, border_radius=4)
+
+    # ------------------------------------------------------------------
+    # Wave info panel (top-right)
+    # ------------------------------------------------------------------
+
+    def _draw_wave_info(self, surface):
+        wm  = self._wave_manager
+        from src.settings import WAVE_DEFINITIONS, SCREEN_WIDTH
+
+        # Wave label
+        if wm.wave_index is None:
+            wave_label = "INFINITE"
+        else:
+            total = len(WAVE_DEFINITIONS)
+            wave_label = f"WAVE {wm.wave_index + 1}/{total}"
+
+        # Elapsed time MM:SS
+        secs  = wm.wave_time_ms // 1000
+        mm, ss = divmod(secs, 60)
+        time_label = f"{mm:02d}:{ss:02d}"
+
+        remaining = wm.enemies_remaining()
+        kill_label = f"Kills: {wm.kills}   Score: {wm.score}"
+
+        x = SCREEN_WIDTH - 200
+        y = 20
+        for text, color in [
+            (wave_label,          C_GOLD),
+            (time_label,          C_BONE),
+            (f"Left: {remaining}", C_BONE),
+            (kill_label,          C_GOLD),
+        ]:
+            lbl = self._font.render(text, True, color)
+            surface.blit(lbl, (x, y))
+            y += 22
 
     def _build_portraits(self):
         """Build three placeholder face portraits for the three HP stages."""
