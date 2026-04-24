@@ -514,39 +514,54 @@ Reuses the **Holy Water Pot — Full** sprite (16×20 px) × 3 displayed in a ro
 
 ## Sprite Summary Table
 
-| Sprite | Size | Frames | Notes |
-|---|---|---|---|
-| Player idle | 32×48 | 2 | |
-| Player walk_right | 32×48 | 4 | walk_left = runtime flip |
-| Player shotgun_fire | 32×48 | 2 | |
-| Player water_throw | 32×48 | 2 | |
-| Player damaged | 32×48 | 1 | |
-| Player death | 32×48 | 4 | |
-| Normal vampire idle | 32×48 | 2 | |
-| Normal vampire walk | 32×48 | 4 | |
-| Normal vampire damaged | 32×48 | 1 | |
-| Normal vampire death | 32×48 | 3 | |
-| Fast vampire idle | 32×48 | 2 | |
-| Fast vampire walk | 32×48 | 4 | animate 2× speed |
-| Fast vampire damaged | 32×48 | 1 | |
-| Fast vampire death | 32×48 | 3 | |
-| Mirror enemy | 32×48 | 10 | same as player, faces left, runtime flip added |
-| Dracula P1 idle | 48×64 | 2 | |
-| Dracula P1 walk | 48×64 | 4 | |
-| Dracula P1 damaged | 48×64 | 1 | |
-| Dracula P1 death | 48×64 | 5 | |
-| Dracula P2 idle | 48×64 | 2 | scaled to 72×96 at runtime |
-| Dracula P2 walk | 48×64 | 4 | scaled to 72×96 at runtime |
-| Dracula P2 damaged | 48×64 | 1 | scaled to 72×96 at runtime |
-| Dracula P2 death | 48×64 | 5 | scaled to 72×96 at runtime |
-| Silver cross | 24×24 | 1 | runtime rotation |
-| Shotgun pellet | 8×8 | 1 | runtime rotation |
-| Holy water pot full | 16×20 | 1 | |
-| Holy water pot empty | 16×20 | 1 | |
-| Holy water splash | 48×32 | 3 | |
-| Fountain flowing | 64×64 | 3 | loop |
-| Fountain empty | 64×64 | 1 | |
-| Fountain refilling | 64×64 | 3 | → transitions to flowing |
-| HP bar | 128×16 | 1 | fill drawn at runtime |
-| Wave banner | 200×32 | 1 | text drawn at runtime |
-| Upgrade card frame | 96×128 | 1 | icon + text drawn at runtime |
+Multi-frame sprites use the suffix `_1`, `_2`, … before `.svg`. Convert each SVG to PNG at the same name before loading in Pygame.
+
+| Sprite | Size | Frames | Filenames | Notes |
+|---|---|---|---|---|
+| Player idle | 32×48 | 2 | `player_idle_1.svg` `player_idle_2.svg` | |
+| Player walk_right | 32×48 | 4 | `player_walk_1.svg` … `player_walk_4.svg` | walk_left = runtime flip |
+| Player shotgun_fire | 32×48 | 2 | `player_fire_1.svg` `player_fire_2.svg` | |
+| Player water_throw | 32×48 | 2 | `player_throw_1.svg` `player_throw_2.svg` | |
+| Player damaged | 32×48 | 1 | `player_damaged.svg` | |
+| Player death | 32×48 | 4 | `player_death_1.svg` … `player_death_4.svg` | |
+| Normal vampire idle | 32×48 | 2 | `vampire_idle_1.svg` `vampire_idle_2.svg` | |
+| Normal vampire walk | 32×48 | 4 | `vampire_walk_1.svg` … `vampire_walk_4.svg` | |
+| Normal vampire damaged | 32×48 | 1 | `vampire_damaged.svg` | |
+| Normal vampire death | 32×48 | 3 | `vampire_death_1.svg` … `vampire_death_3.svg` | |
+| Fast vampire idle | 32×48 | 2 | `fast_idle_1.svg` `fast_idle_2.svg` | |
+| Fast vampire walk | 32×48 | 4 | `fast_walk_1.svg` … `fast_walk_4.svg` | animate 2× speed |
+| Fast vampire damaged | 32×48 | 1 | `fast_damaged.svg` | |
+| Fast vampire death | 32×48 | 3 | `fast_death_1.svg` … `fast_death_3.svg` | |
+| Mirror enemy idle | 32×48 | 2 | `mirror_idle_1.svg` `mirror_idle_2.svg` | faces left |
+| Mirror enemy walk | 32×48 | 4 | `mirror_walk_1.svg` … `mirror_walk_4.svg` | runtime flip added |
+| Mirror enemy damaged | 32×48 | 1 | `mirror_damaged.svg` | |
+| Mirror enemy death | 32×48 | 4 | `mirror_death_1.svg` … `mirror_death_4.svg` | |
+| Dracula P1 idle | 48×64 | 2 | `dracula_p1_idle_1.svg` `dracula_p1_idle_2.svg` | |
+| Dracula P1 walk | 48×64 | 4 | `dracula_p1_walk_1.svg` … `dracula_p1_walk_4.svg` | |
+| Dracula P1 damaged | 48×64 | 1 | `dracula_p1_damaged.svg` | |
+| Dracula P1 death | 48×64 | 5 | `dracula_p1_death_1.svg` … `dracula_p1_death_5.svg` | |
+| Dracula P2 idle | 48×64 | 2 | `dracula_p2_idle_1.svg` `dracula_p2_idle_2.svg` | scaled 1.5× at runtime |
+| Dracula P2 walk | 48×64 | 4 | `dracula_p2_walk_1.svg` … `dracula_p2_walk_4.svg` | scaled 1.5× at runtime |
+| Dracula P2 damaged | 48×64 | 1 | `dracula_p2_damaged.svg` | scaled 1.5× at runtime |
+| Dracula P2 death | 48×64 | 5 | `dracula_p2_death_1.svg` … `dracula_p2_death_5.svg` | scaled 1.5× at runtime |
+| Silver cross | 24×24 | 1 | `cross.svg` | runtime rotation |
+| Shotgun pellet | 8×8 | 1 | `pellet.svg` | runtime rotation |
+| Holy water pot full | 16×20 | 1 | `water_full.svg` | |
+| Holy water pot empty | 16×20 | 1 | `water_empty.svg` | |
+| Holy water splash | 48×32 | 3 | `splash_1.svg` `splash_2.svg` `splash_3.svg` | |
+| Holy water puddle (DoT) | 32×32 | 1 | `puddle.svg` | runtime scale for pulse |
+| Bat | 16×16 | 2 | `bat_1.svg` `bat_2.svg` | runtime rotation for direction |
+| Blood decal | 24×16 | 1 | `blood_decal.svg` | ground splatter on kill |
+| Tombstone | 36×52 | 1 | `tombstone.svg` | map obstacle |
+| Heal pickup | 20×20 | 2 | `heal_1.svg` `heal_2.svg` | pulsing animation |
+| Cross pickup | 20×20 | 1 | `cross_pickup.svg` | ground drop |
+| Fountain flowing | 64×64 | 3 | `fountain_flow_1.svg` … `fountain_flow_3.svg` | loop |
+| Fountain empty | 64×64 | 1 | `fountain_empty.svg` | |
+| Fountain refilling | 64×64 | 3 | `fountain_refill_1.svg` … `fountain_refill_3.svg` | → transitions to flowing |
+| Face portrait — healthy | 72×72 | 1 | `portrait_healthy.svg` | HP ≥ 75% |
+| Face portrait — damaged | 72×72 | 1 | `portrait_damaged.svg` | HP 30–74% |
+| Face portrait — critical | 72×72 | 1 | `portrait_critical.svg` | HP < 30% |
+| HUD shotgun sprite | 50×46 | 1 | `hud_gun.svg` | bottom panel decoration |
+| HP bar frame | 128×16 | 1 | `hp_bar.svg` | fill drawn at runtime |
+| Wave banner | 200×32 | 1 | `wave_banner.svg` | text drawn at runtime |
+| Upgrade card frame | 96×128 | 1 | `upgrade_card.svg` | icon + text drawn at runtime |
