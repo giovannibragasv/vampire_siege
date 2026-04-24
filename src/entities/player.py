@@ -50,6 +50,8 @@ class Player:
         self._dodge_vy       = 0.0
         self._trail: list[tuple[int, int]] = []  # world positions for ghost trail
         self._cam_x = 0
+        self._cam_y = 0
+        self._facing_down = True
 
         self._surface = self._make_surface()
 
@@ -59,6 +61,7 @@ class Player:
 
     def handle_event(self, event, cam_x=0, cam_y=0):
         self._cam_x = cam_x
+        self._cam_y = cam_y
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
                 self._active_weapon = "shotgun"
@@ -148,9 +151,11 @@ class Player:
         self._invincible_timer = max(self._invincible_timer, DODGE_DURATION_MS)
 
     def _update_facing(self):
-        mx, _ = pygame.mouse.get_pos()
+        mx, my = pygame.mouse.get_pos()
         screen_cx = self.rect.centerx - self._cam_x
+        screen_cy = self.rect.centery - self._cam_y
         self._facing_right = mx >= screen_cx
+        self._facing_down  = my >= screen_cy
 
     # ------------------------------------------------------------------
     # Damage
@@ -204,13 +209,17 @@ class Player:
                 ghost = self._surface.copy()
                 ghost.set_alpha(alpha)
                 if not self._facing_right:
-                    ghost = flip_surface(ghost)
+                    ghost = flip_surface(ghost, flip_x=True, flip_y=False)
+                if not self._facing_down:
+                    ghost = flip_surface(ghost, flip_x=False, flip_y=True)
                 r = ghost.get_rect(center=pos)
                 surface.blit(ghost, r)
 
         img = self._surface.copy()
         if not self._facing_right:
-            img = flip_surface(img)
+            img = flip_surface(img, flip_x=True, flip_y=False)
+        if not self._facing_down:
+            img = flip_surface(img, flip_x=False, flip_y=True)
 
         # Damage flash (invincible but not rolling)
         if self._invincible_timer > 0 and not self._dodge_active:
