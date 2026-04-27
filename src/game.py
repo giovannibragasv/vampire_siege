@@ -1,3 +1,4 @@
+from pathlib import Path
 import random
 import pygame
 from src.settings import (
@@ -6,6 +7,8 @@ from src.settings import (
     UPGRADES, UPGRADE_CHOICES, WAVE_DEFINITIONS, WAVE_BANNER_MS,
 )
 from src.camera import Camera
+
+_UI_SPRITES = Path(__file__).resolve().parents[1] / "assets" / "sprites" / "ui"
 
 
 class State:
@@ -37,6 +40,7 @@ class Game:
         # Wave banner
         self._banner_text  = ""
         self._banner_timer = 0
+        self._banner_frame = self._load_ui_sprite("wave_banner.png", (200, 32))
         self._death_timer  = 0
         self._death_sequence_ms = 3200
 
@@ -294,11 +298,32 @@ class Game:
         else:
             alpha = 255
 
-        font  = pygame.font.SysFont("serif", 72, bold=True)
-        surf  = font.render(self._banner_text, True, C_GOLD)
+        if self._banner_frame:
+            banner = self._banner_frame.copy()
+            banner.set_alpha(alpha)
+            rect = banner.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+            self.screen.blit(banner, rect)
+
+            font = pygame.font.SysFont("serif", 24, bold=True)
+            text = font.render(self._banner_text, True, (92, 0, 0))
+            text.set_alpha(alpha)
+            self.screen.blit(text, text.get_rect(center=rect.center))
+            return
+
+        font = pygame.font.SysFont("serif", 72, bold=True)
+        surf = font.render(self._banner_text, True, C_GOLD)
         surf.set_alpha(alpha)
         self.screen.blit(surf, surf.get_rect(center=(SCREEN_WIDTH // 2,
-                                                      SCREEN_HEIGHT // 3)))
+                                                     SCREEN_HEIGHT // 3)))
+
+    def _load_ui_sprite(self, filename, size):
+        try:
+            sprite = pygame.image.load((_UI_SPRITES / filename).as_posix()).convert_alpha()
+        except (FileNotFoundError, pygame.error):
+            return None
+        if sprite.get_size() != size:
+            sprite = pygame.transform.scale(sprite, size)
+        return sprite
 
     # ------------------------------------------------------------------
     # Screen overlays

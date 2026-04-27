@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 import pygame
 from src.settings import (
     SHOTGUN_PELLETS,
@@ -14,11 +15,14 @@ from src.settings import (
 )
 from src.transforms.matrices import rotation_matrix, apply_transform, rotate_surface
 
+_ITEM_SPRITES = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "items"
+
 
 class Pellet:
     SIZE = 8
     _BULLET_W = 14
     _BULLET_H = 6
+    _sprite = None
 
     def __init__(self, x, y, vx, vy):
         self.rect = pygame.Rect(
@@ -33,6 +37,19 @@ class Pellet:
         self._surf = self._make_surf(vx, vy)
 
     def _make_surf(self, vx, vy):
+        if Pellet._sprite is None:
+            try:
+                Pellet._sprite = pygame.image.load((_ITEM_SPRITES / "pellet.png").as_posix()).convert_alpha()
+            except (FileNotFoundError, pygame.error):
+                Pellet._sprite = False
+
+        angle_deg = -math.degrees(math.atan2(vy, vx))
+        if Pellet._sprite:
+            sprite = Pellet._sprite
+            if sprite.get_size() != (self.SIZE, self.SIZE):
+                sprite = pygame.transform.scale(sprite, (self.SIZE, self.SIZE))
+            return rotate_surface(sprite, angle_deg)
+
         w, h = self._BULLET_W, self._BULLET_H
         s = pygame.Surface((w, h), pygame.SRCALPHA)
         # Silver casing
@@ -42,7 +59,6 @@ class Pellet:
         # Dark base rim
         pygame.draw.ellipse(s, (120, 120, 140), (0, 1, w // 3, h - 2))
         # Rotate to face velocity (R(θ) matrix via rotate_surface)
-        angle_deg = -math.degrees(math.atan2(vy, vx))
         return rotate_surface(s, angle_deg)
 
     def update(self, dt, arena_inner):

@@ -1,3 +1,4 @@
+from pathlib import Path
 import pygame
 from src.settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, ARENA_WIDTH, ARENA_HEIGHT,
@@ -12,9 +13,11 @@ _GUN_H         = 46
 _AMMO_ICON_W   = 10
 _AMMO_ICON_H   = 18
 _AMMO_GAP      = 4
-_VIAL_W        = 12
+_VIAL_W        = 16
 _VIAL_H        = 20
 _VIAL_GAP      = 5
+_ITEM_SPRITES  = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "items"
+_UI_SPRITES    = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "ui"
 
 
 class HUD:
@@ -25,8 +28,12 @@ class HUD:
         self._wave_manager = wave_manager
         self._font         = pygame.font.SysFont("serif", 18, bold=True)
         self._font_small   = pygame.font.SysFont("serif", 14)
+        self._portrait_assets_loaded = False
         self._portraits    = self._build_portraits()
         self._gun_surf     = self._build_gun_surf()
+        self._hp_bar_frame = self._load_ui_sprite("hp_bar.png", (144, 18))
+        self._water_full   = self._load_item_sprite("water_full.png", (_VIAL_W, _VIAL_H))
+        self._water_empty  = self._load_item_sprite("water_empty.png", (_VIAL_W, _VIAL_H))
 
     # ------------------------------------------------------------------
     # Anchors (computed once for readability)
@@ -97,6 +104,21 @@ class HUD:
     def _draw_hp_bar(self, surface, a):
         p       = self.player
         bx, by  = a["px"], a["hp_y"]
+        if self._hp_bar_frame:
+            bw, bh = self._hp_bar_frame.get_size()
+            fill_x = bx + 23
+            fill_y = by + 5
+            fill_w = 113
+            fill_h = 7
+            filled = int(fill_w * max(0, p.hp) / p.max_hp)
+
+            pygame.draw.rect(surface, (20, 0, 0), (fill_x, fill_y, fill_w, fill_h))
+            pygame.draw.rect(surface, C_BLOOD_HIGH, (fill_x, fill_y, filled, fill_h))
+            surface.blit(self._hp_bar_frame, (bx, by))
+            label = self._font_small.render(f"{p.hp}/{p.max_hp}", True, C_BONE)
+            surface.blit(label, label.get_rect(center=(fill_x + fill_w // 2, by + bh // 2)))
+            return
+
         bw, bh  = 220, 14
         filled  = int(bw * max(0, p.hp) / p.max_hp)
 
@@ -122,6 +144,8 @@ class HUD:
 
         portrait = self._portraits[stage]
         surface.blit(portrait, (a["px"], a["py"]))
+        if self._portrait_assets_loaded:
+            return
 
         border_color = [C_GOLD, C_BLOOD_HIGH, (220, 50, 50)][stage]
         pygame.draw.rect(surface, border_color,
@@ -176,6 +200,11 @@ class HUD:
 
         for i in range(HOLY_WATER_MAX):
             x = ox + i * (vw + _VIAL_GAP)
+            sprite = self._water_full if i < charges else self._water_empty
+            if sprite:
+                surface.blit(sprite, (x, oy))
+                continue
+
             if i < charges:
                 body_color  = C_HOLY_BLUE
                 inner_color = (176, 200, 255)
@@ -275,8 +304,30 @@ class HUD:
     # Asset builders
     # ------------------------------------------------------------------
 
+    def _load_item_sprite(self, filename, size):
+        try:
+            sprite = pygame.image.load((_ITEM_SPRITES / filename).as_posix()).convert_alpha()
+        except (FileNotFoundError, pygame.error):
+            return None
+        if sprite.get_size() != size:
+            sprite = pygame.transform.scale(sprite, size)
+        return sprite
+
+    def _load_ui_sprite(self, filename, size):
+        try:
+            sprite = pygame.image.load((_UI_SPRITES / filename).as_posix()).convert_alpha()
+        except (FileNotFoundError, pygame.error):
+            return None
+        if sprite.get_size() != size:
+            sprite = pygame.transform.scale(sprite, size)
+        return sprite
+
     def _build_gun_surf(self):
         """Placeholder shotgun sprite — barrel + stock + guard."""
+        sprite = self._load_ui_sprite("hud_gun.png", (_GUN_W, _GUN_H))
+        if sprite:
+            return sprite
+
         w, h = _GUN_W, _GUN_H
         s = pygame.Surface((w, h), pygame.SRCALPHA)
 
@@ -304,6 +355,16 @@ class HUD:
 
     def _build_portraits(self):
         """Three face portraits for HP stages."""
+        loaded = [
+            self._load_ui_sprite("portrait_healthy.png", (self.PORTRAIT_SIZE, self.PORTRAIT_SIZE)),
+            self._load_ui_sprite("portrait_damaged.png", (self.PORTRAIT_SIZE, self.PORTRAIT_SIZE)),
+            self._load_ui_sprite("portrait_critical.png", (self.PORTRAIT_SIZE, self.PORTRAIT_SIZE)),
+        ]
+        if all(loaded):
+            self._portrait_assets_loaded = True
+            return loaded
+
+        self._portrait_assets_loaded = False
         s = self.PORTRAIT_SIZE
         portraits = []
 

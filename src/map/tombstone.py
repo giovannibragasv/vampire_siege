@@ -1,4 +1,7 @@
+from pathlib import Path
 import pygame
+
+_MAP_SPRITES = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "map"
 
 
 class Tombstone:
@@ -15,8 +18,13 @@ class Tombstone:
     def __init__(self, cx, cy):
         self.rect = pygame.Rect(0, 0, self.WIDTH, self.HEIGHT)
         self.rect.center = (cx, cy)
+        self._sprite = self._load_sprite()
 
     def draw(self, surface):
+        if self._sprite:
+            surface.blit(self._sprite, self.rect)
+            return
+
         r = self.rect
         cx = r.centerx
 
@@ -41,3 +49,12 @@ class Tombstone:
         pygame.draw.rect(surface, self._MOSS,
                          (r.left + 4, r.bottom - 10, r.width - 8, 6),
                          border_radius=3)
+
+    def _load_sprite(self):
+        try:
+            sprite = pygame.image.load((_MAP_SPRITES / "tombstone.png").as_posix()).convert_alpha()
+        except (FileNotFoundError, pygame.error):
+            return None
+        if sprite.get_size() != (self.WIDTH, self.HEIGHT):
+            sprite = pygame.transform.scale(sprite, (self.WIDTH, self.HEIGHT))
+        return sprite

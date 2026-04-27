@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 import random
 import pygame
 from src.settings import (
@@ -6,6 +7,8 @@ from src.settings import (
     C_VOID, C_DARK_PURPLE, C_BLOOD_DARK,
     TOMBSTONE_COUNT,
 )
+
+_MAP_SPRITES = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "map"
 
 
 class Arena:
@@ -19,6 +22,7 @@ class Arena:
             ARENA_WIDTH  - self.WALL_THICKNESS * 2,
             ARENA_HEIGHT - self.WALL_THICKNESS * 2,
         )
+        self._background = self._load_background()
         self._build_tombstones()
         self._build_fountains()
         self._build_cross_pickup()
@@ -202,8 +206,11 @@ class Arena:
         self.heal_pickup.update(dt)
 
     def draw(self, surface):
-        surface.fill(C_VOID)
-        pygame.draw.rect(surface, C_DARK_PURPLE, self.inner)
+        if self._background:
+            surface.blit(self._background, (0, 0))
+        else:
+            surface.fill(C_VOID)
+            pygame.draw.rect(surface, C_DARK_PURPLE, self.inner)
         self._draw_particles(surface)
 
         for t in self.tombstones:
@@ -214,5 +221,14 @@ class Arena:
             self.cross_pickup.draw(surface)
         self.heal_pickup.draw(surface)
 
-        # Wall border drawn last so it sits on top of edge objects
-        pygame.draw.rect(surface, C_BLOOD_DARK, self.rect, self.WALL_THICKNESS)
+        if not self._background:
+            pygame.draw.rect(surface, C_BLOOD_DARK, self.rect, self.WALL_THICKNESS)
+
+    def _load_background(self):
+        try:
+            image = pygame.image.load((_MAP_SPRITES / "arena_background.png").as_posix()).convert()
+        except (FileNotFoundError, pygame.error):
+            return None
+        if image.get_size() != self.rect.size:
+            image = pygame.transform.smoothscale(image, self.rect.size)
+        return image

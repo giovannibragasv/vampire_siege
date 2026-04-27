@@ -1,5 +1,8 @@
+from pathlib import Path
 import pygame
 from src.settings import FOUNTAIN_REFILL_MS, C_HOLY_BLUE, C_HOLY_LIGHT, C_SILVER
+
+_MAP_SPRITES = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "map"
 
 
 class Fountain:
@@ -12,7 +15,7 @@ class Fountain:
     STATE_EMPTY     = "empty"
     STATE_REFILLING = "refilling"
 
-    SIZE = 48
+    SIZE = 64
 
     def __init__(self, cx, cy):
         self.rect = pygame.Rect(0, 0, self.SIZE, self.SIZE)
@@ -23,6 +26,9 @@ class Fountain:
         self._frame = 0
         self._frame_timer = 0
         self._frame_interval = 180  # ms per animation frame
+        self._flow_frames = self._load_frames("fountain_flow", 3)
+        self._refill_frames = self._load_frames("fountain_refill", 3)
+        self._empty_frame = self._load_sprite("fountain_empty.png")
 
     # ------------------------------------------------------------------
 
@@ -52,6 +58,11 @@ class Fountain:
                 self._refill_timer = 0
 
     def draw(self, surface):
+        sprite = self._current_sprite()
+        if sprite:
+            surface.blit(sprite, self.rect)
+            return
+
         # Placeholder geometry — replaced by sprite sheets once art is ready.
         base_color = {
             self.STATE_FLOWING:   C_HOLY_BLUE,
@@ -66,3 +77,32 @@ class Fountain:
             drop_y = self.rect.top + 8 + (self._frame * 4)
             pygame.draw.circle(surface, C_HOLY_LIGHT,
                                (self.rect.centerx, drop_y), 3)
+
+    def _current_sprite(self):
+        if self.state == self.STATE_FLOWING and self._flow_frames:
+            return self._flow_frames[self._frame % len(self._flow_frames)]
+        if self.state == self.STATE_EMPTY:
+            return self._empty_frame
+        if self.state == self.STATE_REFILLING and self._refill_frames:
+            progress = min(0.999, self._refill_timer / (FOUNTAIN_REFILL_MS * 0.9))
+            index = min(2, int(progress * len(self._refill_frames)))
+            return self._refill_frames[index]
+        return None
+
+    def _load_frames(self, prefix, count):
+        frames = []
+        for i in range(1, count + 1):
+            sprite = self._load_sprite(f"{prefix}_{i}.png")
+            if not sprite:
+                return []
+            frames.append(sprite)
+        return frames
+
+    def _load_sprite(self, filename):
+        try:
+            sprite = pygame.image.load((_MAP_SPRITES / filename).as_posix()).convert_alpha()
+        except (FileNotFoundError, pygame.error):
+            return None
+        if sprite.get_size() != (self.SIZE, self.SIZE):
+            sprite = pygame.transform.scale(sprite, (self.SIZE, self.SIZE))
+        return sprite

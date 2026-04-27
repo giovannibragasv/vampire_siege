@@ -1,10 +1,13 @@
 import math
+from pathlib import Path
 import pygame
 from src.settings import HEAL_PICKUP_AMOUNT, HEAL_PICKUP_RESPAWN_MS, C_BLOOD_HIGH, C_BONE
 
+_ITEM_SPRITES = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "items"
+
 
 class HealPickup:
-    SIZE = 22
+    SIZE = 20
 
     def __init__(self, cx, cy):
         self.rect = pygame.Rect(0, 0, self.SIZE, self.SIZE)
@@ -12,6 +15,7 @@ class HealPickup:
         self.available = True
         self._respawn_timer = 0
         self._pulse = 0.0
+        self._frames = self._load_frames()
 
     def try_collect(self, player):
         if not self.available:
@@ -34,6 +38,13 @@ class HealPickup:
         if not self.available:
             return
         scale = 1.0 + math.sin(self._pulse) * 0.12
+        if self._frames:
+            frame = self._frames[0 if math.sin(self._pulse) < 0 else 1]
+            size = max(1, int(self.SIZE * scale))
+            sprite = pygame.transform.scale(frame, (size, size))
+            surface.blit(sprite, sprite.get_rect(center=self.rect.center))
+            return
+
         s = int(self.SIZE * scale)
         r = pygame.Rect(0, 0, s, s)
         r.center = self.rect.center
@@ -55,3 +66,15 @@ class HealPickup:
                          (r.left + 3, cy - 2, s - 6, 4))
         # Inner shine
         pygame.draw.rect(surface, C_BONE, (cx - 1, r.top + 4, 2, 4))
+
+    def _load_frames(self):
+        frames = []
+        for i in range(1, 3):
+            try:
+                sprite = pygame.image.load((_ITEM_SPRITES / f"heal_{i}.png").as_posix()).convert_alpha()
+            except (FileNotFoundError, pygame.error):
+                return []
+            if sprite.get_size() != (self.SIZE, self.SIZE):
+                sprite = pygame.transform.scale(sprite, (self.SIZE, self.SIZE))
+            frames.append(sprite)
+        return frames

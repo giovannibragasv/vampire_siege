@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 import pygame
 from src.settings import (
     HOLY_WATER_MAX, HOLY_WATER_SPEED, HOLY_WATER_DAMAGE,
@@ -8,8 +9,23 @@ from src.settings import (
 )
 
 
+_ITEM_SPRITES = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "items"
+
+
+def _load_item_sprite(filename, size):
+    try:
+        sprite = pygame.image.load((_ITEM_SPRITES / filename).as_posix()).convert_alpha()
+    except (FileNotFoundError, pygame.error):
+        return None
+    if sprite.get_size() != size:
+        sprite = pygame.transform.scale(sprite, size)
+    return sprite
+
+
 class WaterPuddle:
     """Glowing DoT zone left behind after a splash dissipates."""
+
+    _sprite = None
 
     def __init__(self, cx, cy):
         self.cx = cx
@@ -41,6 +57,18 @@ class WaterPuddle:
                     self._hit_this_tick.add(id(e))
 
     def draw(self, surface):
+        if WaterPuddle._sprite is None:
+            WaterPuddle._sprite = _load_item_sprite("puddle.png", (32, 32))
+
+        if WaterPuddle._sprite:
+            progress = self._timer / HOLY_WATER_PUDDLE_MS
+            pulse = 1.0 + 0.08 * math.sin(self._pulse)
+            size = max(1, int(32 * pulse))
+            sprite = pygame.transform.scale(WaterPuddle._sprite, (size, size))
+            sprite.set_alpha(max(0, int(190 * (1 - progress))))
+            surface.blit(sprite, sprite.get_rect(center=(self.cx, self.cy)))
+            return
+
         progress = self._timer / HOLY_WATER_PUDDLE_MS
         base_a  = int(110 * (1 - progress))
         inner_a = int(55  * (1 - progress))
@@ -65,6 +93,7 @@ class WaterSplash:
 
     FRAME_DURATION_MS = 120
     MAX_FRAMES = 3
+    _frames = None
 
     def __init__(self, cx, cy):
         self.cx = cx
@@ -96,6 +125,17 @@ class WaterSplash:
                     self._hit.add(id(e))
 
     def draw(self, surface):
+        if WaterSplash._frames is None:
+            WaterSplash._frames = [
+                _load_item_sprite(f"splash_{i}.png", (48, 32))
+                for i in range(1, self.MAX_FRAMES + 1)
+            ]
+
+        sprite = WaterSplash._frames[min(self._frame, self.MAX_FRAMES - 1)]
+        if sprite:
+            surface.blit(sprite, sprite.get_rect(center=(self.cx, self.cy)))
+            return
+
         alpha = max(0, 180 - self._frame * 60)
         r = self.current_radius
         splash_surf = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
@@ -110,6 +150,7 @@ class HolyWaterThrow:
     """Projectile in flight — translates toward target, spawns WaterSplash on arrival."""
 
     SIZE = 10
+    _sprite = None
 
     def __init__(self, ox, oy, tx, ty):
         dx, dy = tx - ox, ty - oy
@@ -135,6 +176,15 @@ class HolyWaterThrow:
     def draw(self, surface):
         if not self.alive:
             return
+        if HolyWaterThrow._sprite is None:
+            HolyWaterThrow._sprite = _load_item_sprite("water_full.png", (16, 20))
+
+        if HolyWaterThrow._sprite:
+            angle = -math.degrees(math.atan2(self.vy, self.vx)) - 90
+            sprite = pygame.transform.rotate(HolyWaterThrow._sprite, angle)
+            surface.blit(sprite, sprite.get_rect(center=(int(self.x), int(self.y))))
+            return
+
         pygame.draw.circle(surface, C_HOLY_BLUE,
                            (int(self.x), int(self.y)), self.SIZE // 2)
         pygame.draw.circle(surface, C_HOLY_LIGHT,
