@@ -39,6 +39,10 @@ class Dracula(Enemy):
         self._p1_walk_frames = self._load_frames("dracula_p1_walk", 4)
         self._p1_damaged_frame = self._load_named_frame("dracula_p1_damaged.png")
         self._p1_death_frames = self._load_frames("dracula_p1_death", 5)
+        self._p2_idle_frames = self._load_frames("dracula_p2_idle", 2, "dracula_p2")
+        self._p2_walk_frames = self._load_frames("dracula_p2_walk", 4, "dracula_p2")
+        self._p2_damaged_frame = self._load_named_frame("dracula_p2_damaged.png", "dracula_p2")
+        self._p2_death_frames = self._load_frames("dracula_p2_death", 5, "dracula_p2")
         self._anim_timer = 0
         self._anim_index = 0
         self._damage_anim_timer = 0
@@ -81,6 +85,8 @@ class Dracula(Enemy):
             if self.hp <= self.max_hp * DRACULA_ENRAGE_THRESHOLD:
                 self._begin_enrage()
                 return
+            self._damage_anim_timer = self.DAMAGE_FRAME_MS
+            self._surface = self._p2_damaged_frame
         if self.hp <= 0:
             self.alive = False
 
@@ -102,7 +108,10 @@ class Dracula(Enemy):
         self.hp = self.max_hp
         self.speed = DRACULA_P2_SPEED
         self.damage = int(self.damage * 1.3)
-        self._surface = self._p2_surface
+        self._surface = self._p2_idle_frames[0]
+        self._anim_timer = 0
+        self._anim_index = 0
+        self._damage_anim_timer = 0
         cx, cy = self.rect.center
         self.WIDTH  = int(48 * DRACULA_P2_SCALE)
         self.HEIGHT = int(64 * DRACULA_P2_SCALE)
@@ -165,7 +174,7 @@ class Dracula(Enemy):
         super().update(dt, player, arena)
 
         if self._phase == 2:
-            self._surface = self._p2_surface
+            self._update_p2_animation(dt)
             self._update_bats(dt, player, arena)
         else:
             self._update_p1_animation(dt)
@@ -306,21 +315,36 @@ class Dracula(Enemy):
             self._anim_index = (self._anim_index + steps) % len(self._p1_walk_frames)
         self._surface = self._p1_walk_frames[self._anim_index]
 
-    def _load_frames(self, prefix, count):
+    def _update_p2_animation(self, dt):
+        if self._damage_anim_timer > 0:
+            self._damage_anim_timer = max(0, self._damage_anim_timer - dt)
+            self._surface = self._p2_damaged_frame
+            return
+
+        self._anim_timer += dt
+        if self._anim_timer >= self.WALK_FRAME_MS:
+            steps = self._anim_timer // self.WALK_FRAME_MS
+            self._anim_timer %= self.WALK_FRAME_MS
+            self._anim_index = (self._anim_index + steps) % len(self._p2_walk_frames)
+        self._surface = self._p2_walk_frames[self._anim_index]
+
+    def _load_frames(self, prefix, count, folder="dracula_p1"):
         return [
-            self._load_named_frame(f"{prefix}_{idx}.png")
+            self._load_named_frame(f"{prefix}_{idx}.png", folder)
             for idx in range(1, count + 1)
         ]
 
-    def _load_named_frame(self, filename):
+    def _load_named_frame(self, filename, folder="dracula_p1"):
         root = Path(__file__).resolve().parents[2]
-        frame_path = root / "assets" / "sprites" / "enemies" / "dracula_p1" / filename
+        frame_path = root / "assets" / "sprites" / "enemies" / folder / filename
         try:
             frame = pygame.image.load(frame_path.as_posix()).convert_alpha()
-            if frame.get_size() != (self.WIDTH, self.HEIGHT):
-                frame = pygame.transform.scale(frame, (self.WIDTH, self.HEIGHT))
+            if frame.get_size() != (48, 64):
+                frame = pygame.transform.scale(frame, (48, 64))
             return frame
         except (FileNotFoundError, pygame.error):
+            if folder == "dracula_p2":
+                return self._make_p2_placeholder_surface()
             return self._make_p1_placeholder_surface()
 
     def _make_p1_surface(self):
@@ -341,6 +365,11 @@ class Dracula(Enemy):
         return surf
 
     def _make_p2_surface(self):
+        if hasattr(self, "_p2_idle_frames") and self._p2_idle_frames:
+            return self._p2_idle_frames[0].copy()
+        return self._make_p2_placeholder_surface()
+
+    def _make_p2_placeholder_surface(self):
         surf = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
         pygame.draw.rect(surf, (20, 0, 40),
                          (2, 6, self.WIDTH - 4, self.HEIGHT - 6), border_radius=6)

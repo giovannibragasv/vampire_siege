@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 import pygame
 from src.settings import (
     CROSS_ORBIT_RADIUS, CROSS_ORBIT_SPEED_DEG,
@@ -24,7 +25,7 @@ class SilverCross:
         self.orbit_radius  = orbit_radius
         self.orbit_speed_mult = orbit_speed_mult
         self._hit_cooldowns: dict[int, int] = {}
-        self._surface = self._make_surface()
+        self._surface = self._load_surface()
         self.rect = pygame.Rect(0, 0, self.SIZE, self.SIZE)
 
     # ------------------------------------------------------------------
@@ -38,6 +39,17 @@ class SilverCross:
         pygame.draw.rect(surf, C_SILVER, (4, cy - 3, self.SIZE - 8, 1))
         pygame.draw.circle(surf, (139, 0, 0), (cx, cy), 3)
         return surf
+
+    def _load_surface(self):
+        root = Path(__file__).resolve().parents[2]
+        path = root / "assets" / "sprites" / "items" / "cross.png"
+        try:
+            surf = pygame.image.load(path.as_posix()).convert_alpha()
+            if surf.get_size() != (self.SIZE, self.SIZE):
+                surf = pygame.transform.scale(surf, (self.SIZE, self.SIZE))
+            return surf
+        except (FileNotFoundError, pygame.error):
+            return self._make_surface()
 
     def update(self, dt, player_cx, player_cy):
         deg_per_sec = CROSS_ORBIT_SPEED_DEG * self.orbit_speed_mult
