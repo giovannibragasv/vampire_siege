@@ -86,13 +86,14 @@ class Shotgun:
 
     def handle_fire(self, player_cx, player_cy, target_x, target_y):
         if self._cooldown > 0 or self._reloading or self.ammo <= 0:
-            return
+            return False
         self._spawn_pellets(player_cx, player_cy, target_x, target_y)
         self._cooldown = SHOTGUN_COOLDOWN_MS
         self.ammo -= 1
         if self.ammo <= 0:
             self._reloading = True
             self._reload_timer = 0
+        return True
 
     def _spawn_pellets(self, ox, oy, tx, ty):
         dx, dy = tx - ox, ty - oy

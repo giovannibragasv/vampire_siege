@@ -1,5 +1,6 @@
 import math
 import random
+from pathlib import Path
 import pygame
 from src.settings import (
     MIRROR_HP, MIRROR_DAMAGE,
@@ -8,7 +9,7 @@ from src.settings import (
     MIRROR_BAT_COUNT,
     ARENA_CENTER_X, CONTACT_DAMAGE_COOLDOWN_MS,
 )
-from src.transforms.matrices import mirror_position, flip_surface, rotation_matrix, apply_transform
+from src.transforms.matrices import mirror_position, rotation_matrix, apply_transform
 from src.entities.enemy import Enemy
 from src.entities.bat import Bat
 
@@ -28,11 +29,20 @@ class MirrorEnemy(Enemy):
     """
 
     COLOR = (200, 200, 220)
+    IDLE_FRAME_MS = 450
+    WALK_FRAME_MS = 130
+    DAMAGE_FRAME_MS = 220
+    DEATH_FRAME_MS = 360
 
     def __init__(self, player_cx, player_cy):
         mx = int(mirror_position(player_cx, ARENA_CENTER_X))
         super().__init__(mx, player_cy, MIRROR_HP, 0, MIRROR_DAMAGE, self.COLOR)
-        self._surface         = self._make_mirror_surface()
+        self.remove_ready = False
+        self._idle_frames     = self._load_frames("mirror_idle", 2)
+        self._walk_frames     = self._load_frames("mirror_walk", 4)
+        self._damaged_frame   = self._load_named_frame("mirror_damaged.png")
+        self._death_frames    = self._load_frames("mirror_death", 4)
+        self._surface         = self._idle_frames[0]
         self._conjure_surface = self._make_conjure_surface()
         self._dash_surface    = self._make_dash_surface()
 
@@ -50,12 +60,37 @@ class MirrorEnemy(Enemy):
         self._jty = 0.0   # jitter target y
         self._jitter_timer    = 0.0
         self._jitter_interval = 160  # ms between new random targets
+        self._anim_timer      = 0
+        self._anim_index      = 0
+        self._damage_anim_timer = 0
+        self._dying = False
+
+    def take_damage(self, amount, kbx=0.0, kby=0.0):
+        if self._dying:
+            return
+        super().take_damage(amount, kbx, kby)
+        if not self.alive:
+            self._start_death()
+        else:
+            self._damage_anim_timer = self.DAMAGE_FRAME_MS
+            self._surface = self._damaged_frame
 
     # ------------------------------------------------------------------
     # State machine
     # ------------------------------------------------------------------
 
     def update(self, dt, player, arena):
+        if self._dying:
+            self._update_death(dt)
+            for b in self.bats:
+                b.update(dt, arena.inner, player)
+            self.bats = [b for b in self.bats if b.alive]
+            self._hit_timer = max(0, self._hit_timer - dt)
+            for dn in self._damage_numbers:
+                dn.update(dt)
+            self._damage_numbers = [dn for dn in self._damage_numbers if dn.alive]
+            return
+
         px, py = player.rect.center
 
         if self._state == _State.PATROL:
@@ -129,6 +164,7 @@ class MirrorEnemy(Enemy):
         self.try_damage_player(player, dt)
         self._hit_timer = max(0, self._hit_timer - dt)
         self._contact_cooldown = max(0, self._contact_cooldown - dt)
+        self._update_animation(dt)
 
     # ------------------------------------------------------------------
     # Transitions
@@ -170,21 +206,16 @@ class MirrorEnemy(Enemy):
     # ------------------------------------------------------------------
 
     def draw(self, surface):
-        # Pick sprite by state
-        if self._state == _State.CONJURING:
-            img = self._conjure_surface.copy()
+        img = self._surface.copy()
+        if self._state == _State.CONJURING and not self._dying:
             self._draw_conjure_particles(surface)
-        elif self._state == _State.DASHING:
-            img = self._dash_surface.copy()
-        else:
-            img = self._surface.copy()
 
-        if self._hit_timer > 0:
+        if self._hit_timer > 0 and not self._dying:
             img.fill((255, 60, 60, 120), special_flags=pygame.BLEND_RGBA_ADD)
 
-        img = flip_surface(img, flip_x=True, flip_y=False)
         surface.blit(img, self.rect)
-        self._draw_hp_bar(surface)
+        if self.alive:
+            self._draw_hp_bar(surface)
 
         # Draw bats
         for b in self.bats:
@@ -204,6 +235,62 @@ class MirrorEnemy(Enemy):
     # Surfaces
     # ------------------------------------------------------------------
 
+    def _update_animation(self, dt):
+        if self._damage_anim_timer > 0:
+            self._damage_anim_timer = max(0, self._damage_anim_timer - dt)
+            self._surface = self._damaged_frame
+            return
+
+        if self._state == _State.CONJURING:
+            self._surface = self._conjure_surface
+            return
+        if self._state == _State.DASHING:
+            self._surface = self._dash_surface
+            return
+
+        self._anim_timer += dt
+        if self._anim_timer >= self.WALK_FRAME_MS:
+            steps = self._anim_timer // self.WALK_FRAME_MS
+            self._anim_timer %= self.WALK_FRAME_MS
+            self._anim_index = (self._anim_index + steps) % len(self._walk_frames)
+        self._surface = self._walk_frames[self._anim_index]
+
+    def _start_death(self):
+        self._dying = True
+        self.remove_ready = False
+        self._anim_timer = 0
+        self._anim_index = 0
+        self._damage_anim_timer = 0
+        self._kbx = 0.0
+        self._kby = 0.0
+        self._surface = self._death_frames[0]
+
+    def _update_death(self, dt):
+        self._anim_timer += dt
+        if self._anim_index < len(self._death_frames) - 1 and self._anim_timer >= self.DEATH_FRAME_MS:
+            steps = self._anim_timer // self.DEATH_FRAME_MS
+            self._anim_timer %= self.DEATH_FRAME_MS
+            self._anim_index = min(self._anim_index + steps, len(self._death_frames) - 1)
+        self._surface = self._death_frames[self._anim_index]
+        self.remove_ready = self._anim_index >= len(self._death_frames) - 1 and self._anim_timer > self.DEATH_FRAME_MS * 0.75
+
+    def _load_frames(self, prefix, count):
+        return [
+            self._load_named_frame(f"{prefix}_{idx}.png")
+            for idx in range(1, count + 1)
+        ]
+
+    def _load_named_frame(self, filename):
+        root = Path(__file__).resolve().parents[2]
+        frame_path = root / "assets" / "sprites" / "enemies" / "mirror_enemy" / filename
+        try:
+            frame = pygame.image.load(frame_path.as_posix()).convert_alpha()
+            if frame.get_size() != (self.WIDTH, self.HEIGHT):
+                frame = pygame.transform.scale(frame, (self.WIDTH, self.HEIGHT))
+            return frame
+        except (FileNotFoundError, pygame.error):
+            return self._make_mirror_surface()
+
     def _make_mirror_surface(self):
         surf = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
         pygame.draw.rect(surf, (200, 200, 220),
@@ -213,34 +300,15 @@ class MirrorEnemy(Enemy):
         return surf
 
     def _make_conjure_surface(self):
-        """Hands raised outward, body lit purple — conjuring pose."""
-        surf = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
-        # Body (brighter purple tint)
-        pygame.draw.rect(surf, (180, 160, 220),
-                         (6, 10, self.WIDTH - 12, self.HEIGHT - 12), border_radius=4)
-        # Arms raised outward
-        pygame.draw.rect(surf, (160, 140, 200), (0,  16, 6,  4))   # left arm
-        pygame.draw.rect(surf, (160, 140, 200), (self.WIDTH - 6, 16, 6, 4))  # right arm
-        # Head
-        pygame.draw.ellipse(surf, (100, 60, 130), (8, 0, 16, 14))
-        # Glowing eyes
-        pygame.draw.circle(surf, (220, 100, 255), (14, 7), 3)
-        pygame.draw.circle(surf, (220, 100, 255), (19, 7), 3)
+        """Asset-based conjuring pose with a purple charge tint."""
+        surf = self._damaged_frame.copy()
+        surf.fill((95, 32, 180, 90), special_flags=pygame.BLEND_RGBA_ADD)
         return surf
 
     def _make_dash_surface(self):
-        """Horizontally elongated to suggest speed blur."""
-        surf = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
-        # Stretched body
-        pygame.draw.rect(surf, (160, 160, 210),
-                         (0, 12, self.WIDTH, self.HEIGHT - 14), border_radius=6)
-        # Motion streaks (dark lines behind)
+        """Asset-based dash pose with subtle speed streaks."""
+        surf = self._walk_frames[0].copy()
         for i in range(3):
-            pygame.draw.line(surf, (100, 80, 160, 80),
-                             (self.WIDTH - 2 - i * 4, 14),
-                             (self.WIDTH - 2 - i * 4, self.HEIGHT - 14), 2)
-        # Head low / forward
-        pygame.draw.ellipse(surf, (80, 40, 100), (4, 6, 14, 12))
-        # Eyes determined
-        pygame.draw.circle(surf, (255, 80, 255), (10, 12), 2)
+            x = self.WIDTH - 2 - i * 4
+            pygame.draw.line(surf, (155, 48, 255, 85), (x, 10), (x, self.HEIGHT - 8), 1)
         return surf

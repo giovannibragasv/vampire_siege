@@ -31,10 +31,17 @@
 
 ---
 
-## Base GPT Prompt Suffix
-> Append this to **every** individual frame prompt below:
->
-> `pixel art, [WxH] pixels, Castlevania Symphony of the Night meets Stardew Valley style, gothic dark palette, transparent background, no anti-aliasing, hard pixel edges, 3-4 shades per color region, slight top-left rim lighting`
+## Style Lock
+
+**`player_idle_1` is the canonical reference for all sprites.**
+
+Every character prompt must:
+- Explicitly say "same pixel scale and art style as player_idle_1"
+- Describe **only what changes** from the reference
+- Never deviate from: hard pixel edges, no anti-aliasing, 3–4 shades per region, transparent background
+
+**Locked player description** (copy verbatim into every player prompt):
+> `young vampire hunter with copper-red messy short hair, pale warm skin, dark brown leather long coat with brass buttons and upturned collar, cream shirt visible at collar, dark grey trousers, brown knee-high boots with brass buckle, sawn-off double-barrel shotgun, 32x48 pixels, gothic pixel-art game sprite, transparent background, hard pixel edges, no anti-aliasing`
 
 ---
 
@@ -50,241 +57,399 @@
 
 **Physical details (top to bottom):**
 - Hair: short, copper-red, slightly messy — #8B3A1A / #C4622D / #E8894A
-- Face: angular, small determined eyes, no hat, pale warm skin — #C8956A / #DBA882 / #ECC9A8
+- Face: angular, small determined eyes, pale warm skin — #C8956A / #DBA882 / #ECC9A8
 - Coat: dark brown leather, knee-length, brass buttons down center, collar up — #3B1F0F / #5C3317 / #7A4A25
 - Shirt: cream linen visible at collar and cuffs — #E8DCC8
 - Gloves: dark leather, same palette as coat
 - Trousers: dark grey — #1E1E2E / #2D2D42
 - Boots: brown leather with brass buckle, knee-high — #2A1505 / #4A2810
-
-**Weapon (idle/walk):** Sawn-off double-barrel shotgun, held at right hip. Barrel points right. Wood stock (#5C3317), metal barrels (#9A9A9A).
+- Shotgun: wood stock (#5C3317), double metal barrels (#9A9A9A / #C0C0C0)
 
 ---
 
 #### idle — 2 frames
 
-**Frame 1:** Standing upright, slight forward lean, weight on both feet, right foot 1px forward. Shotgun rested at right hip pointing right. Arms relaxed. Eyes forward.
+> **`player_idle_1.svg`**
+> ```
+> Create player_idle_1 — the canonical reference frame for the entire game's art style. Young vampire hunter standing idle facing right: copper-red messy short hair, pale warm skin, angular face with small determined eyes, dark brown leather long coat with brass buttons down center and upturned collar (knee-length), cream linen shirt visible at collar, dark grey trousers, brown knee-high boots with brass buckle. Sawn-off double-barrel shotgun rested at right hip, barrel pointing right, wood stock and silver metal barrels. Both feet shoulder-width apart, weight balanced, arms relaxed at sides. Slight forward combat lean. 32x48 pixels, Castlevania Symphony of the Night meets Stardew Valley pixel art, gothic dark palette, transparent background, hard pixel edges, no anti-aliasing, 3-4 shades per color region.
+> ```
 
-**Frame 2:** Identical to frame 1 but chest shifted 1px downward and coat hem 1px upward (breathing cycle).
-
-> **Prompt:** `vampire hunter idle frame [1/2], young determined hunter standing, slight forward combat lean, copper-red short messy hair, dark brown leather long coat with brass buttons and upturned collar, cream shirt visible at neck, dark grey trousers, brown boots with brass buckle, sawn-off shotgun rested at right hip pointing right, arms relaxed, 32x48 pixels` + suffix
+> **`player_idle_2.svg`**
+> ```
+> Same exact character and art style as player_idle_1: young vampire hunter, copper-red messy short hair, pale skin, dark brown leather long coat with brass buttons and upturned collar, cream shirt, dark grey trousers, brown boots, sawn-off shotgun at right hip, 32x48 pixels, transparent background.
+>
+> Create player_idle_2, the breathing frame: identical to player_idle_1 but chest shifted 1px downward and coat hem shifted 1px upward (subtle breathing cycle). All other details identical — same face, same feet, same weapon position. No other changes.
+> ```
 
 ---
 
 #### walk_right — 4 frames
 
-**Frame 1:** Right foot ~4px forward, left arm swings back ~3px, right arm forward holding shotgun, coat bottom edge flares right by 2px, head level.
+> **`player_walk_1.svg`**
+> ```
+> Same exact character and art style as player_idle_1: young vampire hunter with copper-red messy short hair, pale skin, dark brown leather long coat with brass buttons and upturned collar, cream shirt, dark grey trousers, brown boots, sawn-off shotgun, 32x48 pixels, transparent background.
+>
+> Create player_walk_1, the first stride frame of a 4-frame walk cycle facing right: right foot extended approximately 4px forward, left foot 3px back. Body slightly lowered compared to idle. Right arm holding shotgun swings slightly forward, left arm swings back ~3px. Coat bottom edge flares right by 2px from forward motion. Head level, eyes forward, determined expression unchanged.
+> ```
 
-**Frame 2:** Feet together, neutral stance, coat settled, arms centered.
+> **`player_walk_2.svg`**
+> ```
+> Same exact character and art style as player_idle_1 and player_walk_1: young vampire hunter with copper-red messy short hair, pale skin, wearing a dark brown leather long coat with brass buttons and upturned collar, cream shirt, dark trousers, brown boots, holding a sawn-off shotgun at the right hip pointing right, 32x48 pixels, gothic pixel-art game sprite, transparent background.
+>
+> Create player_walk_2, the passing/neutral frame of a 4-frame walk cycle facing right: both feet close together under the body, knees slightly bent, no extended stride, torso centered and slightly higher than stride frames, body weight transitioning forward. Arms are closer to neutral: right arm holding shotgun slightly forward, left arm slightly back but not exaggerated. Coat settles closer to the body with only slight backward movement, minimal flare. Head level, eyes forward, expression unchanged.
+>
+> Maintain identical proportions, same scale, same pixel density, same silhouette, same outfit details, same shading style, no added detail, no style drift.
+> ```
 
-**Frame 3:** Left foot ~4px forward, right arm swings back slightly (shotgun shifts back), left arm forward, coat bottom flares left by 2px.
+> **`player_walk_3.svg`**
+> ```
+> Same exact character and art style as player_idle_1 and player_walk_1: young vampire hunter with copper-red messy short hair, pale skin, dark brown leather long coat with brass buttons and upturned collar, cream shirt, dark trousers, brown boots, sawn-off shotgun at right side, 32x48 pixels, gothic pixel-art game sprite, transparent background.
+>
+> Create player_walk_3, the opposite stride frame of a 4-frame walk cycle facing right: left foot extended forward about the same distance as right foot was in player_walk_1, right foot extended back. Body slightly lowered compared to passing frame. Left arm swings forward, right arm (holding shotgun) shifts slightly back with the stride. Coat flares slightly in the opposite direction compared to player_walk_1, with the lower coat edge trailing behind movement. Head level, same determined expression.
+>
+> Maintain identical proportions, same scale, same pixel density, same silhouette, same weapon shape, same face, same coat length, no distortion, no style drift.
+> ```
 
-**Frame 4:** Feet together, neutral, same as frame 2.
-
-> **Prompt:** `vampire hunter walking right frame [1/2/3/4], [describe specific foot/arm position from above], coat flapping, determined stride, 32x48 pixels` + suffix
+> **`player_walk_4.svg`**
+> ```
+> Same exact character and art style as player_idle_1 and player_walk_1: young vampire hunter with copper-red messy short hair, pale skin, dark brown leather long coat with brass buttons, cream shirt, dark trousers, brown boots, holding a sawn-off shotgun, 32x48 pixels, gothic pixel-art game sprite, transparent background.
+>
+> Create player_walk_4, the second passing frame of a 4-frame walk cycle facing right: both feet again close together under the body, similar to player_walk_2 but slightly offset for animation smoothness. Torso centered, slightly raised. Arms returning toward neutral from the opposite stride: left arm slightly forward, right arm (with shotgun) slightly back but minimal motion. Coat closer to body with subtle motion, less flare than stride frames.
+>
+> Maintain identical proportions, same scale, same pixel density, same silhouette, same details, ensure it loops smoothly back into player_walk_1, no style drift.
+> ```
 
 #### walk_left
-Horizontal mirror of walk_right — handled at runtime via `pygame.transform.flip(sprite, True, False)`. **Do not generate separately.**
+Runtime flip of walk_right via `flip_surface()`. **Do not generate separately.**
 
 ---
 
 #### shotgun_fire — 2 frames
 
-**Frame 1:** Both hands grip shotgun. Arms extended forward-right at chest height, slight forward body lean, muzzle points right at arm's-length. Left hand supports barrel from below, right hand on grip. Eyes narrowed, focused.
+> **`player_fire_1.svg`**
+> ```
+> Same exact character and art style as player_idle_1: young vampire hunter with copper-red messy short hair, pale skin, dark brown leather long coat with brass buttons and upturned collar, cream shirt, dark trousers, brown boots, 32x48 pixels, gothic pixel-art game sprite, transparent background.
+>
+> Create player_fire_1, the aiming frame of a 2-frame shotgun firing animation facing right: both hands gripping the sawn-off shotgun, arms extended forward-right at chest height, left hand supporting barrel underneath, right hand on grip. Body leans slightly forward into the shot, stance stable. Head slightly angled forward, eyes focused toward target. Coat reacts slightly to forward motion but remains mostly controlled.
+>
+> Maintain identical proportions, same scale, same pixel density, same weapon design, same silhouette, no exaggeration, no style drift.
+> ```
 
-**Frame 2 (recoil):** Arms pulled 3px back toward body, body leans back 2px, head tilts slightly back. Muzzle flash at barrel tip: 6–8 bright yellow/white pixels radiating from barrel end in a small starburst.
-
-> **Prompt:** `vampire hunter shotgun fire frame [1/2], [aim pose / recoil pose], two-handed grip on sawn-off shotgun, [muzzle flash pixel burst at barrel tip — frame 2 only], 32x48 pixels` + suffix
+> **`player_fire_2.svg`**
+> ```
+> Same exact character and art style as player_fire_1: same character, same proportions, same outfit, same shotgun, same pixel-art style, transparent background.
+>
+> Create player_fire_2, the recoil frame of a 2-frame shotgun firing animation: arms pulled slightly backward from recoil, body leaning slightly back, head tilted slightly upward from impact. Add a small bright muzzle flash at the shotgun barrel tip using a compact pixel burst (yellow-white tones), not too large. Coat reacts slightly backward from recoil. Expression remains focused but tense.
+>
+> Maintain identical proportions, same scale, same pixel density, same silhouette, same weapon shape, ensure consistency with frame 1, no style drift.
+> ```
 
 ---
 
 #### water_throw — 2 frames
 
-**Frame 1 (wind-up):** Right arm raised overhead, elbow bent, small round blue glass pot visibly gripped in right hand. Body weight shifted to back foot (left foot), left arm counterbalances forward and down. Eyes looking forward at throw target.
+> **`player_throw_1.svg`**
+> ```
+> Same exact character and art style as player_idle_1: young vampire hunter, copper-red messy short hair, pale skin, dark brown leather long coat with brass buttons, cream shirt, dark grey trousers, brown boots, 32x48 pixels, transparent background.
+>
+> Create player_throw_1, the wind-up frame of a 2-frame holy water throw animation facing right: right arm raised overhead with elbow bent, small round blue glass vial visibly gripped in right fist. Body weight shifted to left (back) foot. Left arm extended downward-forward for counterbalance. Head facing forward toward throw target. Coat shifts slightly with the body rotation.
+> ```
 
-**Frame 2 (release):** Right arm extended forward at 45° downward angle, hand open (pot no longer in hand — it is in flight), follow-through motion. Body weight shifted fully to front foot. Left arm swings back.
-
-> **Prompt:** `vampire hunter holy water throw frame [1/2], [wind-up: arm raised overhead gripping small round blue glass pot / release: arm extended forward-down open hand follow-through], 32x48 pixels` + suffix
+> **`player_throw_2.svg`**
+> ```
+> Same exact character and art style as player_throw_1: same character, same proportions, same outfit, 32x48 pixels, transparent background.
+>
+> Create player_throw_2, the release frame: right arm extended forward and downward at approximately 45°, hand open (vial no longer in hand — it has left). Body weight fully shifted to front (right) foot, slight forward lean. Left arm swings back as follow-through. Coat flares forward with the motion momentum.
+> ```
 
 ---
 
 #### damaged — 1 frame
 
-Body knocked 2px rightward. Head tilted back 2px. Left arm raised in front of face as a guard. Right arm (shotgun) drops to side. Coat flares leftward. Grimace expression (mouth open, eyebrows angled in pain). Sprite will be tinted red at runtime — generate without tint.
-
-> **Prompt:** `vampire hunter damaged hit pose, body recoiling right, head tilted back, left arm raised as guard, grimace expression, coat flaring, 32x48 pixels` + suffix
+> **`player_damaged.svg`**
+> ```
+> Same exact character and art style as player_idle_1: young vampire hunter, copper-red messy short hair, pale skin, dark brown leather long coat, cream shirt, dark grey trousers, brown boots, 32x48 pixels, transparent background. Generate without any red tint — tint is applied at runtime.
+>
+> Create player_damaged, hit reaction: body knocked 2px rightward and 1px upward from impact. Head tilted back 2px. Left arm raised in front of face as a guard. Right arm (holding shotgun) drops to side. Coat flares leftward. Grimace expression: mouth slightly open, eyebrows angled in pain.
+> ```
 
 ---
 
 #### death — 4 frames
 
-**Frame 1:** Body staggering. Torso tilted ~20° backward, legs still upright, arms falling outward, shotgun dropping from hand (angled away).
+> **`player_death_1.svg`**
+> ```
+> Same art style as player_idle_1, 32x48 pixels, transparent background.
+> Create player_death_1: body staggering — torso tilted ~20° backward, legs still upright, both arms falling outward, shotgun dropping from right hand at an angle. Expression: shock and disbelief.
+> ```
 
-**Frame 2:** Knees buckling. Body dropped 6px from frame 1, knees bent forward, torso still visible but lowering, arms now completely at sides.
+> **`player_death_2.svg`**
+> ```
+> Same art style as player_idle_1, 32x48 pixels, transparent background.
+> Create player_death_2: knees buckling — body dropped 6px from frame 1, knees bending forward, torso still visible but lowering, arms now completely at sides. Shotgun lying on ground to the right edge of the sprite.
+> ```
 
-**Frame 3:** Kneeling position. Sitting on knees, torso slumped forward 15°, head drooping, arms hanging.
+> **`player_death_3.svg`**
+> ```
+> Same art style as player_idle_1, 32x48 pixels, transparent background.
+> Create player_death_3: kneeling — sitting on bent knees, torso slumped forward 15°, head drooping downward, arms hanging limp at sides. Coat spread around the knees on the ground.
+> ```
 
-**Frame 4:** Fully collapsed. Body horizontal on ground, coat spread flat, arms at sides, head to the right. Takes up lower 16px of sprite height.
-
-> **Prompt:** `vampire hunter death animation frame [1/2/3/4], [staggering backward / knees buckling dropping / kneeling slumped / collapsed horizontal on ground], 32x48 pixels` + suffix
+> **`player_death_4.svg`**
+> ```
+> Same art style as player_idle_1, 32x48 pixels, transparent background.
+> Create player_death_4: fully collapsed horizontal — body lying on ground, coat spread flat, arms at sides, head tilted toward the right. Character occupies only the lower 16px of sprite height. Upper portion is empty.
+> ```
 
 ---
 
 ### 2. Normal Vampire
 
-**Concept:** Victorian aristocrat vampire. Tall, pale, unhurried. Moves with unnatural stillness between lurching deliberate steps.
+**Concept:** Victorian aristocrat vampire. Tall, pale, unhurried.
 
 **Silhouette:** Fills full 32×48 sprite height. Thin and elongated.
 
 **Physical details:**
-- Hair: slicked back jet black with sharp widow's peak — #0A0A0A
-- Face: gaunt, hollow cheeks, pale grey skin, blood-red glowing eyes (2×2 px glow), visible elongated fangs below lower lip — skin #A09898 / #C8C0B8 / #DDD8D0
-- Cape exterior: floor-length, high collar framing the head — #0A0A1E / #12122E / #1A1A40
-- Cape lining: deep crimson, only visible when cape opens — #5C0000 / #8B0000
-- Shirt: white frilled front, visible at chest opening — #E8DCC8
-- Waistcoat: black, beneath cape — #0A0A0A / #181818
-- Legs: black trousers, pointed black shoes
-- Hands: clawed fingertips visible at cape edges
+- Hair: slicked back jet black, sharp widow's peak — #0A0A0A
+- Face: gaunt, hollow cheeks, pale grey skin, blood-red glowing eyes (2×2 px), visible elongated fangs — skin #A09898 / #C8C0B8
+- Cape: floor-length, high collar — exterior #0A0A1E / #12122E / #1A1A40, lining #5C0000 / #8B0000
+- Shirt: white frilled front — #E8DCC8
+- Clawed fingertips visible at cape edges
 
 ---
 
 #### idle — 2 frames
 
-**Frame 1:** Cape fully wrapped around body. Head raised slightly, looking slightly downward with contempt. Red eyes glowing. Hands at sides, claws just visible at cape hem.
+> **`vampire_idle_1.svg`**
+> ```
+> Same pixel scale and art style as player_idle_1 — 32x48 pixels, gothic pixel-art, Castlevania SotN style, transparent background, hard pixel edges, no anti-aliasing.
+>
+> Create vampire_idle_1: Victorian aristocrat vampire standing idle facing right. Tall gaunt figure filling the full sprite height. Slicked-back jet-black hair with sharp widow's peak. Gaunt face, hollow cheeks, pale grey skin (#A09898), blood-red glowing eyes (2x2px). Elongated fangs visible below lower lip. Floor-length dark cape fully closed, extremely high collar framing the head. White frilled shirt visible at chest. Feet together. Clawed fingertips just visible at cape hem. Expression: cold ancient contempt.
+> ```
 
-**Frame 2:** Cape edges shift 2px outward at hem (slight flutter). Head position unchanged.
-
-> **Prompt:** `Victorian vampire standing idle frame [1/2], tall gaunt aristocrat, slicked black widow's peak hair, pale grey skin, blood-red glowing eyes, elongated fangs, high-collared floor-length dark cape [closed / cape hem fluttering 2px outward], white frilled shirt at chest, clawed hands at sides, 32x48 pixels` + suffix
+> **`vampire_idle_2.svg`**
+> ```
+> Same exact art style and character as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_idle_2: identical to vampire_idle_1 but cape edges shift 2px outward at hem (slight flutter). Head and body position unchanged. No other changes.
+> ```
 
 ---
 
 #### walk — 4 frames
 
-**Frame 1:** Left foot 4px forward, visible below cape hem. Cape opens slightly at left to reveal leg, arms shift slightly outward from body.
+> **`vampire_walk_1.svg`**
+> ```
+> Same art style and character as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_walk_1: left foot 4px forward, visible below cape hem. Cape opens slightly at left side revealing leg. Arms shift slightly outward from body. Slow deliberate stride. Expression unchanged.
+> ```
 
-**Frame 2:** Feet together, cape fully closed again.
+> **`vampire_walk_2.svg`**
+> ```
+> Same art style and character as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_walk_2 (passing/neutral): both feet together under body, cape fully closed again, arms returned to sides. Body upright.
+> ```
 
-**Frame 3:** Right foot 4px forward, cape opens at right.
+> **`vampire_walk_3.svg`**
+> ```
+> Same art style and character as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_walk_3: right foot 4px forward, cape opens at right side revealing leg. Arms shift slightly outward other direction.
+> ```
 
-**Frame 4:** Feet together, cape closed.
-
-> **Prompt:** `Victorian vampire walking frame [1/2/3/4], [left foot forward cape opening left / neutral cape closed / right foot forward cape opening right / neutral cape closed], lurching aristocratic stride, 32x48 pixels` + suffix
+> **`vampire_walk_4.svg`**
+> ```
+> Same art style and character as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_walk_4: second neutral frame identical to vampire_walk_2 for smooth loop. Both feet together, cape closed, arms at sides.
+> ```
 
 ---
 
 #### damaged — 1 frame
 
-Head snapped back 3px. Cape blown fully open revealing body beneath (frilled shirt, waistcoat visible). Left arm raised in shock/rage, right arm at side. Body recoils back 2px.
-
-> **Prompt:** `Victorian vampire hit/damaged, head recoiling sharply back, cape blown fully open revealing frilled shirt and waistcoat, left arm raised in shock, body recoiling, 32x48 pixels` + suffix
+> **`vampire_damaged.svg`**
+> ```
+> Same art style and character as vampire_idle_1, 32x48 pixels, transparent background. Generate without tint — applied at runtime.
+> Create vampire_damaged: head snapped back 3px in fury (not pain). Cape blown fully open revealing frilled shirt and black waistcoat. Left arm raised in shock or rage. Body recoils 2px back. Expression: furious snarl, fangs fully bared.
+> ```
 
 ---
 
 #### death — 3 frames
 
-**Frame 1:** Stumbling backward 3px, cape swirling open wide, arms flailing outward, head thrown back.
+> **`vampire_death_1.svg`**
+> ```
+> Same art style as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_death_1: stumbling backward 3px. Cape swirling wide open, arms flailing outward, head thrown back. Expression: disbelief.
+> ```
 
-**Frame 2:** Body crumbling from feet up. Lower half dissolving into grey pixel dust particles (10–12 scattered 1px dots below knee line). Upper half still intact but tilting. Cape settling.
+> **`vampire_death_2.svg`**
+> ```
+> Same art style as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_death_2: body crumbling from feet up. Lower half (below knee) dissolving into 10-12 scattered 1px grey pixel dust particles. Upper half still intact but tilting. Cape beginning to collapse inward.
+> ```
 
-**Frame 3:** Only a small mound of grey ash pixels remains (6px tall, 12px wide) at floor with the collapsed cape draped over it. A single clawed hand visible at cape edge.
-
-> **Prompt:** `Victorian vampire death frame [1/2/3], [stumbling cape swirling / body crumbling into ash from feet up upper half still standing / collapsed ash pile with cape and one clawed hand], 32x48 pixels` + suffix
+> **`vampire_death_3.svg`**
+> ```
+> Same art style as vampire_idle_1, 32x48 pixels, transparent background.
+> Create vampire_death_3: only a small mound of grey ash remains (6px tall, 12px wide) with collapsed cape draped over it. One clawed hand visible at a cape edge.
+> ```
 
 ---
 
 ### 3. Fast Vampire
 
-**Concept:** Feral, smaller, animalistic. Bat-like. Crouched low. Moves in quick erratic bursts.
+**Concept:** Feral, smaller, animalistic. Bat-like. Crouched low.
 
-**Silhouette:** 32×48 sprite but character fills only ~70% of height. Crouched stance puts head near vertical center of sprite.
+**Silhouette:** 32×48 sprite but character fills only ~70% of height (crouched).
 
 **Physical details:**
-- Hair: wild, unkempt, dark brown/black, jagged — #0A0A0A / #1A0E05
-- Face: sunken yellow glowing eyes, large protruding fangs, torn ear tips, gaunt — skin #7A6E6A / #9A9090
-- Clothing: tattered dark rags, barely covering, shredded at all edges — #1A0E00 / #2E1A05 / #3D2510
-- Arms: elongated, reaching nearly to the ground, visible bone at elbows
-- Legs: crouched permanently, feet splayed
+- Hair: wild, unkempt, dark brown/black — #0A0A0A / #1A0E05
+- Face: sunken yellow glowing eyes, large protruding fangs, torn ear tips — skin #7A6E6A / #9A9090
+- Clothing: tattered dark rags, shredded at edges — #1A0E00 / #2E1A05
+- Arms: elongated, nearly reaching the ground, visible bone at elbows
+- Legs: permanently crouched, feet splayed
 
 ---
 
 #### idle — 2 frames
 
-**Frame 1:** Deep crouch, head low between shoulders, yellow eyes staring forward, fingers splayed and touching the ground, weight on toes.
+> **`fast_idle_1.svg`**
+> ```
+> Same pixel scale and art style as player_idle_1 — 32x48 pixels, gothic pixel-art, transparent background, hard pixel edges, no anti-aliasing.
+>
+> Create fast_idle_1: feral smaller vampire crouching idle facing right. Character fills only ~70% of sprite height — deep crouch, head near vertical center of sprite. Wild jagged dark hair. Sunken yellow glowing eyes (2x2px). Large protruding fangs. Torn ear tips. Tattered dark rags shredded at all edges. Elongated arms with visible bone at elbows, fingers splayed touching the ground. Weight on toes, feet splayed. Expression: predatory, coiled tension.
+> ```
 
-**Frame 2:** Weight shifted left, body 1px lower, head tilts 1px right (tension before burst).
-
-> **Prompt:** `feral smaller vampire crouching idle frame [1/2], hunched animalistic pose, wild jagged dark hair, yellow glowing sunken eyes, large protruding fangs, torn ear tips, tattered dark rags, elongated arms nearly touching ground, splayed feet, gaunt bony silhouette, 32x48 pixels` + suffix
+> **`fast_idle_2.svg`**
+> ```
+> Same art style and character as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_idle_2: weight shifted 1px left, body 1px lower, head tilts 1px right. Subtle tension shift before burst. No other changes.
+> ```
 
 ---
 
 #### walk — 4 frames (animate at 2× normal vampire speed)
 
-**Frame 1:** Mid-bound, right leg extended back, left leg forward, body lunging low, both arms swinging wide outward for balance.
+> **`fast_walk_1.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_walk_1: mid-bound, character airborne — right leg extended back, left leg forward, body lunging low. Both arms swinging wide outward for balance. Erratic bounding gait.
+> ```
 
-**Frame 2:** Landing, both feet on ground, body at lowest point, arms swinging inward.
+> **`fast_walk_2.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_walk_2: landing — both feet on ground, body at lowest crouch point. Arms swinging inward from momentum.
+> ```
 
-**Frame 3:** Mid-bound other direction, left leg back, right leg forward.
+> **`fast_walk_3.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_walk_3: mid-bound other direction — left leg back, right leg forward, airborne, arms swinging wide outward.
+> ```
 
-**Frame 4:** Landing, same as frame 2.
-
-> **Prompt:** `feral vampire fast walk frame [1/2/3/4], erratic bounding low gait, [mid-bound lunging / landing crouch / mid-bound other side / landing crouch], arms swinging wide, 32x48 pixels` + suffix
+> **`fast_walk_4.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_walk_4: landing — same low crouch as fast_walk_2. Arms swinging inward. Loops back into fast_walk_1.
+> ```
 
 ---
 
 #### damaged — 1 frame
 
-Launched upward and back — body 3px up, 3px back from center, limbs flailing outward, head thrown back, eyes wide, fangs bared.
-
-> **Prompt:** `feral vampire damaged, launched upward-backward by impact, limbs flailing, head thrown back, eyes wide, fangs bared, 32x48 pixels` + suffix
+> **`fast_damaged.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background. No tint — applied at runtime.
+> Create fast_damaged: launched upward and backward — body 3px up, 3px back from center. All limbs flailing outward. Head thrown back. Eyes wide, fangs fully bared.
+> ```
 
 ---
 
 #### death — 3 frames
 
-**Frame 1:** Launched backward 4px, midair, limbs splayed, body beginning to fragment (2–3 loose pixel fragments detaching from edge of silhouette).
+> **`fast_death_1.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_death_1: launched backward 4px, mid-air. Limbs splayed. 2-3 loose pixel fragments visibly detaching from silhouette edges.
+> ```
 
-**Frame 2:** Body mid-disintegration — silhouette broken into 4–5 irregular pixel chunks in an outward burst pattern.
+> **`fast_death_2.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_death_2: mid-disintegration — silhouette broken into 4-5 irregular pixel chunks in outward burst pattern. No coherent body shape.
+> ```
 
-**Frame 3:** Scattered ash pixel burst — 15–20 individual 1–2px grey/brown dots spread across the sprite area, no coherent silhouette remaining.
-
-> **Prompt:** `feral vampire violent death frame [1/2/3], [launched backward fragmenting / mid-disintegration into pixel chunks / ash burst scattered pixels], 32x48 pixels` + suffix
+> **`fast_death_3.svg`**
+> ```
+> Same art style as fast_idle_1, 32x48 pixels, transparent background.
+> Create fast_death_3: scattered ash burst — 15-20 individual 1-2px grey/brown pixel dots spread across sprite area. No recognizable silhouette.
+> ```
 
 ---
 
 ### 4. Mirror Enemy — The Shadow
 
-**Concept:** A spectral dark reflection of the player. Identical silhouette. Color-inverted palette. Something is visually wrong — it feels like a cursed mirror image.
+**Concept:** Spectral dark reflection of the player. Identical silhouette, inverted palette.
 
-**Silhouette:** Identical to player (32×48 px). Faces LEFT (since it mirrors the player who faces right).
+**Silhouette:** Identical to player (32×48 px). Faces LEFT.
 
-**Color inversion logic:**
-- Where player has dark leather (#3B1F0F) → Shadow has silver-white (#D0D0E0)
-- Where player has mid leather (#5C3317) → Shadow has light grey (#B0B0C0)
-- Where player has copper-red hair → Shadow has silver-white hair (#E8E8F0) with faint purple sheen (#9B30FF tint)
-- Where player has warm skin → Shadow has deep shadow-purple skin (#2D1040 / #4A2060)
-- Eyes: hollow glowing purple #9B30FF, 2×2 px glow
-- Coat details (buttons, collar): dark void #0D0010 where player has bright brass
+**Color inversion:**
+- Dark leather (#3B1F0F) → silver-white (#D0D0E0)
+- Mid leather (#5C3317) → light grey (#B0B0C0)
+- Copper-red hair → silver-white with faint purple sheen (#9B30FF tint)
+- Warm skin → deep shadow-purple (#2D1040 / #4A2060)
+- Eyes: hollow glowing purple #9B30FF, 2×2 px
+- Add 1–2 subtly misplaced pixels on the outline (uncanny feeling)
 
-**Distortion detail:** 1–2 pixels somewhere on the outline are "off" — e.g., an extra pixel on the shoulder that shouldn't be there, a gap in the coat hem. Subtle.
+**Frames:** Same set as player. All face LEFT. Runtime flip also applied dynamically.
 
-**Frames:** Same animation set as player (idle ×2, walk ×4, damaged, death). All frames face LEFT. Pygame additionally applies `pygame.transform.flip` dynamically at runtime based on mirror position.
+---
 
-> **Prompt:** `dark mirror ghost reflection of a vampire hunter, identical silhouette facing LEFT, inverted color scheme: silver-white coat where original is dark leather, deep purple skin where original is warm, silver-white hair with faint purple sheen, hollow glowing purple eyes, spectral slightly distorted look with 1-2 misplaced pixels on outline, [frame description matching player frame], 32x48 pixels` + suffix
+> **`mirror_idle_1.svg`**
+> ```
+> Same pixel scale and art style as player_idle_1 — 32x48 pixels, gothic pixel-art, transparent background, hard pixel edges, no anti-aliasing.
+>
+> Create mirror_idle_1: spectral dark mirror reflection of the player, facing LEFT. Identical silhouette to player_idle_1 but color-inverted: coat is silver-white (#D0D0E0) where player has dark leather; skin is deep shadow-purple (#2D1040 / #4A2060) where player has warm tone; hair is silver-white with faint purple sheen; hollow glowing purple eyes (2x2px, #9B30FF). Shotgun rendered in the same inverted palette. Add exactly 1-2 subtly misplaced pixels on the outline (e.g. one extra pixel at a shoulder or a 1px gap in coat hem) for an uncanny feel. Same idle standing pose as player_idle_1.
+> ```
+
+> **`mirror_idle_2.svg`**
+> ```
+> Same art style and character as mirror_idle_1, 32x48 pixels, transparent background.
+> Create mirror_idle_2: identical to mirror_idle_1 but coat hem shifts 1px upward, chest 1px down (breathing). Same misplaced pixels. No other changes.
+> ```
+
+> **`mirror_walk_1.svg`** through **`mirror_walk_4.svg`**
+> ```
+> Same art style as mirror_idle_1, facing LEFT, 32x48 pixels, transparent background.
+> Create mirror_walk_[N]: mirror of player_walk_[N] — same pose geometry but facing left and with the inverted color palette. [Describe the stride/passing position matching the player_walk_[N] frame.] Maintain the same 1-2 misplaced outline pixels from mirror_idle_1.
+> ```
+
+> **`mirror_damaged.svg`**
+> ```
+> Same art style as mirror_idle_1, facing LEFT, 32x48 pixels, transparent background. No tint — applied at runtime.
+> Create mirror_damaged: mirror of player_damaged — same hit reaction geometry (body knocked, arm guard, grimace) but facing left with inverted palette.
+> ```
+
+> **`mirror_death_1.svg`** through **`mirror_death_4.svg`**
+> ```
+> Same art style as mirror_idle_1, facing LEFT, 32x48 pixels, transparent background.
+> Create mirror_death_[N]: mirror of player_death_[N] — same collapse geometry but facing left with the inverted silver-white/purple palette.
+> ```
 
 ---
 
 ### 5. Dracula — Phase 1
 
-**Concept:** The boss. Ancient vampire lord. Imposing, aristocratic, unhurried. Every movement deliberate and threatening.
+**Concept:** Ancient vampire lord boss. Imposing, aristocratic, deliberate.
 
 **Sprite size:** 48×64 px
 
 **Physical details:**
 - Hair: slicked back sharply, jet black, dramatic widow's peak — #0A0A0A
-- Face: angular, high cheekbones, thin sharp nose, thin dark mustache, pale grey-purple skin, blood-red glowing eyes (3×3 px glow), visible long curved fangs — skin #8C8080 / #B0A8A0
-- Cape: floor-length, very high collar (frames the head like a halo), exterior black (#050010 / #0D0022 / #150033), interior deep crimson lining (#5C0000 / #8B0000 / #B00000) only visible when cape opens
-- Tuxedo: black jacket, visible at chest, sharp lapels
-- Ascot tie: white, at collar, prominent — #F0EAD6
+- Face: angular, high cheekbones, thin sharp nose, thin dark mustache, pale grey-purple skin, blood-red glowing eyes (3×3 px), long curved fangs
+- Cape: floor-length, very high collar — exterior #050010 / #0D0022, lining #5C0000 / #8B0000 / #B00000
+- Tuxedo: black jacket, sharp lapels
+- Ascot tie: white — #F0EAD6
 - Gloves: black, formal
 - Shoes: pointed, formal, black
 
@@ -292,72 +457,139 @@ Launched upward and back — body 3px up, 3px back from center, limbs flailing o
 
 #### idle — 2 frames
 
-**Frame 1:** Cape fully closed. Arms clasped behind back (arms not visible at sides). Head raised, looking slightly downward with ancient contempt. Cape collar up, framing the face. Feet together.
+> **`dracula_p1_idle_1.svg`**
+> ```
+> Same pixel scale and art style as player_idle_1 but at 48x64 pixels — gothic pixel-art, Castlevania SotN style, transparent background, hard pixel edges, no anti-aliasing.
+>
+> Create dracula_p1_idle_1: Dracula, ancient vampire lord boss, standing idle facing right. Imposing tall aristocrat filling the full sprite height. Jet-black slicked hair with dramatic sharp widow's peak. Angular face, high cheekbones, thin dark mustache, pale grey-purple skin, blood-red glowing eyes (3x3px), long curved fangs. Extremely high-collared floor-length black cape fully closed, cape collar framing the face like a halo. White ascot tie at collar. Black tuxedo jacket lapels visible at chest. Formal black gloves. Pointed formal shoes. Arms clasped behind back (not visible). Feet together. Expression: ancient cold contempt.
+> ```
 
-**Frame 2:** Cape edges at hem shift 3px outward (slow flutter). Head unchanged. Ascot tie shifts 1px.
-
-> **Prompt:** `Dracula vampire lord boss idle frame [1/2], imposing tall aristocrat, jet black slicked hair sharp widow's peak, thin mustache, pale grey-purple skin, blood-red glowing eyes, long curved fangs, extremely high-collared floor-length black cape [closed arms behind back / hem fluttering], white ascot tie, black tuxedo lapels visible, feet together, 48x64 pixels` + suffix
+> **`dracula_p1_idle_2.svg`**
+> ```
+> Same art style and character as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_idle_2: identical to frame 1 but cape edges at hem shift 3px outward (slow flutter) and ascot tie shifts 1px. All other details identical.
+> ```
 
 ---
 
 #### walk — 4 frames
 
-Slow and deliberate. Long dramatic stride. Arms outstretched slightly at sides when moving — not behind back.
+> **`dracula_p1_walk_1.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_walk_1: slow menacing stride — right foot 5px forward, cape sweeps wide to the right (hem fans dramatically), left arm raises slightly outward. Long deliberate step.
+> ```
 
-**Frame 1:** Right foot 5px forward, cape sweeps wide right (hem fans out right side), left arm raises slightly outward.
+> **`dracula_p1_walk_2.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_walk_2 (neutral): feet together, cape settling, arms returning to sides.
+> ```
 
-**Frame 2:** Feet together, cape settling, arms return to sides.
+> **`dracula_p1_walk_3.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_walk_3: left foot 5px forward, cape sweeps wide to the left, right arm raises slightly outward.
+> ```
 
-**Frame 3:** Left foot 5px forward, cape sweeps wide left, right arm raises slightly.
-
-**Frame 4:** Feet together, cape settling.
-
-> **Prompt:** `Dracula walking frame [1/2/3/4], slow menacing aristocratic stride, [right foot forward cape sweeping right arm out / neutral cape settling / left foot forward cape sweeping left arm out / neutral], 48x64 pixels` + suffix
+> **`dracula_p1_walk_4.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_walk_4: second neutral — feet together, cape settling, arms at sides. Loops back to walk_1.
+> ```
 
 ---
 
 #### damaged — 1 frame
 
-Head snapped back 4px in fury (not pain — rage). Cape blown fully open, crimson lining entirely visible. One arm raised with pointed finger toward the player in fury. Body recoils back 3px. Expression: furious snarl, fangs bared.
-
-> **Prompt:** `Dracula damaged, furious rather than pained, head snapping back, cape blown fully open revealing crimson lining, one arm raised with pointing finger, fangs bared in snarl, 48x64 pixels` + suffix
+> **`dracula_p1_damaged.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background. No tint — applied at runtime.
+> Create dracula_p1_damaged: reacting in fury, not pain. Head snapped back 4px. Cape blown fully open revealing full crimson lining. One arm raised with pointed finger toward the player. Body recoils back 3px. Expression: furious snarl, fangs bared.
+> ```
 
 ---
 
 #### death — 5 frames
 
-**Frame 1:** Staggering — torso tilted 15° backward, cape swirling open, arms reaching out to sides for balance, expression disbelief.
+> **`dracula_p1_death_1.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_death_1: staggering — torso tilted 15° backward, cape swirling wide open, arms reaching outward for balance. Expression: disbelief.
+> ```
 
-**Frame 2:** Body bowing — torso hunched 30° forward now, head dropping, one arm clutching at chest, cape still open and swirling.
+> **`dracula_p1_death_2.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_death_2: bowing — torso hunched 30° forward, head dropping, one arm clutching chest. Cape open and swirling around him.
+> ```
 
-**Frame 3:** Crumbling begins at feet — lower 20px dissolving into dark pixel dust, torso still recognizable but lowering, cape beginning to collapse.
+> **`dracula_p1_death_3.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_death_3: crumbling from feet up — lower 20px dissolving into dark pixel dust (12-15 scattered 1-2px dots). Upper torso still recognizable but lowering. Cape beginning to collapse.
+> ```
 
-**Frame 4:** Only upper torso and cape remain — floating 10px above growing ash pile, face visible with fading eye glow.
+> **`dracula_p1_death_4.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_death_4: only upper torso and cape collar remain — floating 10px above a growing dark ash pile below. Face still visible with fading red eye glow. Cape draping downward.
+> ```
 
-**Frame 5:** Empty collapsed cape on floor (8px tall mound) with a faint blood-red mist — 8–12 individual red pixels scattered outward in a burst pattern around the cape.
-
-> **Prompt:** `Dracula death animation frame [1/2/3/4/5], [staggering disbelief arms out / bowing clutching chest / crumbling from feet up dust forming / only upper torso floating above ash / empty cape collapsed with red mist scatter], 48x64 pixels` + suffix
+> **`dracula_p1_death_5.svg`**
+> ```
+> Same art style as dracula_p1_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p1_death_5: empty — collapsed cape on floor (8px tall mound centered low in sprite) with a faint blood-red mist scatter: 8-12 individual 1px red/dark-red pixel dots radiating outward from the cape mound.
+> ```
 
 ---
 
 ### 6. Dracula — Phase 2
 
-**Concept:** Same character, but control is slipping. Aristocratic facade cracking. Monstrous nature emerging.
+**Concept:** Same character, aristocratic facade cracking, monstrous nature emerging.
 
-**Base sprite size:** 48×64 px — Pygame scales to 72×96 at runtime using a 1.5× scale matrix. Design the sprite at 48×64 with phase 2 visual changes — do not pre-scale.
+**Base sprite size:** 48×64 px — **scaled to 72×96 at runtime**. Design at 48×64 only.
 
 **Visual changes from Phase 1:**
-- Cape edges now ragged/frayed — torn pixel border (alternating 1–2px notches along hem)
-- Hair no longer slicked — several strands projecting outward irregularly
-- Hands: claws now extended and visibly curled outward (not gloved — claws pierce through)
-- Tuxedo: shoulder seams ripped (2–3px gap/tear at each shoulder)
+- Cape edges: ragged/frayed torn pixel border (1–2px notches along hem)
+- Hair: no longer slicked, several strands projecting irregularly outward
+- Hands: claws extended and curled, piercing through ripped gloves
+- Tuxedo: shoulder seams ripped (2–3px gap at each shoulder)
 - Skin: small cracks at jaw and forehead (3–4 dark pixel lines)
-- Eyes: 4×4 px glow now instead of 3×3, brighter red (#FF3030)
-- Expression: no longer contemptuous — now openly enraged
+- Eyes: 4×4 px glow, brighter red (#FF3030) instead of 3×3
+- Expression: openly enraged, not contemptuous
 
-**Frames:** Identical set to Phase 1 (idle ×2, walk ×4, damaged, death). Each redrawn with phase 2 modifications.
+---
 
-> **Prompt:** `Dracula boss phase 2 transformation, same figure as before but monstrous and cracking, frayed torn ragged cape hem, wild disheveled hair with protruding strands, clawed hands extended through ripped gloves, ripped tuxedo at shoulders, cracked skin at jaw and forehead, larger brighter glowing red eyes, openly enraged expression, [frame description], 48x64 pixels` + suffix
+> **`dracula_p2_idle_1.svg`**
+> ```
+> Same art style as dracula_p1_idle_1 but with phase 2 visual changes, 48x64 pixels, transparent background.
+> Create dracula_p2_idle_1: same Dracula figure as dracula_p1_idle_1 but monstrous and cracking — frayed torn ragged cape hem (1-2px notches along bottom edge), wild disheveled hair with 2-3 strands projecting outward, clawed hands extended through ripped gloves, ripped tuxedo at both shoulders (2-3px tear gaps), small crack lines at jaw and forehead, larger brighter glowing red eyes (4x4px, #FF3030). Idle standing pose, same composition as P1 idle.
+> ```
+
+> **`dracula_p2_idle_2.svg`**
+> ```
+> Same as dracula_p2_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p2_idle_2: identical to dracula_p2_idle_1 but cape hem shifts 3px outward (flutter), one stray hair strand shifts 1px. No other changes.
+> ```
+
+> **`dracula_p2_walk_1.svg`** through **`dracula_p2_walk_4.svg`**
+> ```
+> Same art style as dracula_p2_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p2_walk_[N]: same pose geometry as dracula_p1_walk_[N] but with all phase 2 visual changes applied (frayed cape, wild hair, claws, ripped shoulders, skin cracks, larger eyes). [Describe foot/arm position matching P1 walk frame N.]
+> ```
+
+> **`dracula_p2_damaged.svg`**
+> ```
+> Same art style as dracula_p2_idle_1, 48x64 pixels, transparent background. No tint — applied at runtime.
+> Create dracula_p2_damaged: same fury recoil as dracula_p1_damaged but with phase 2 visual changes. Cape fully blown open showing crimson lining and ripped tuxedo. Claws extended on raised arm. Expression: uncontrolled rage.
+> ```
+
+> **`dracula_p2_death_1.svg`** through **`dracula_p2_death_5.svg`**
+> ```
+> Same art style as dracula_p2_idle_1, 48x64 pixels, transparent background.
+> Create dracula_p2_death_[N]: same collapse geometry as dracula_p1_death_[N] but with phase 2 visual changes. The disintegration has a more violent/explosive quality — larger pixel fragments, brighter red mist in final frame.
+> ```
 
 ---
 
@@ -367,21 +599,72 @@ Head snapped back 4px in fury (not pain — rage). Cape blown fully open, crimso
 
 ### Silver Cross — Orbiting Weapon
 
-**Size:** 24×24 px. Single sprite — Pygame applies rotation transform at runtime.
+**Size:** 24×24 px. Single sprite — runtime rotation applied.
 
-**Description:** Ornate gothic crucifix. Vertical arm slightly longer than horizontal. Body: tarnished gold (#C8A84B base, #E8C860 highlight, #8A6A20 shadow). Silver edge highlighting on all arm edges (#D0D0D0, 1px). Small ruby gemstone at center crossing (2×2 px, #8B0000 center, #CC2020 highlight pixel). Glow: 4 outermost pixels at each arm tip are 1 shade brighter than arm (#E8C860), suggesting faint radiance. Arm width: 4px. No background.
+> **`cross.svg`**
+> ```
+> Ornate gothic crucifix pixel art, 24x24 pixels, same Castlevania SotN style as player_idle_1, transparent background, hard pixel edges, no anti-aliasing. Vertical arm slightly longer than horizontal. Tarnished gold body (#C8A84B base, #E8C860 highlight, #8A6A20 shadow). Silver edge highlighting on all arm edges (#D0D0D0, 1px). Small ruby gemstone at center crossing (2x2px, #8B0000 center, #CC2020 highlight pixel). Arms 4px wide. Arm tips 1 shade brighter suggesting faint radiance.
+> ```
 
-> **Prompt:** `ornate gothic crucifix pixel art, 24x24 pixels, tarnished gold body with silver edge highlighting, small ruby gemstone at center crossing, faint golden glow at arm tips, gothic intricate style, transparent background, no anti-aliasing`
+---
+
+### Cross Pickup — Ground Drop
+
+**Size:** 20×20 px. Simpler than the orbit cross — sits on the ground.
+
+> **`cross_pickup.svg`**
+> ```
+> Same pixel art style as player_idle_1, 20x20 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create cross_pickup: a small gothic silver cross lying on the ground as a collectible item. Simpler than the orbit weapon — same cross shape but smaller, silver-grey tones (#C0C0C0 / #E0E0E0 / #808080). Faint soft golden glow aura (1-2px lighter pixels around the cross outline) suggesting holy power. No gemstone — plainer than the weapon cross.
+> ```
+
+---
+
+### Heal Pickup — HP Orb
+
+**Size:** 20×20 px. 2 frames for pulsing (scale handled at runtime too).
+
+> **`heal_1.svg`**
+> ```
+> Same pixel art style as player_idle_1, 20x20 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create heal_1: a small circular health pickup. Red glowing orb with a white cross emblem at center. Outer ring: dark red (#5C0000), mid: blood red (#8B0000), inner bright: (#C41E3A), tiny white cross (4x4px) centered on orb. Faint white-pink glow aura (1-2px) around the outer ring.
+> ```
+
+> **`heal_2.svg`**
+> ```
+> Same art style as heal_1, 20x20 pixels, transparent background.
+> Create heal_2: identical to heal_1 but the glow aura is 1px larger/brighter (pulse frame). The orb itself is 1px larger in all directions. Used to create a gentle pulsing animation at runtime.
+> ```
+
+---
+
+### Bat — Projectile
+
+**Size:** 16×16 px. 2 frames for wing flap. Runtime rotation for direction.
+
+> **`bat_1.svg`**
+> ```
+> Same pixel art style as player_idle_1, 16x16 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create bat_1: small stylized bat projectile viewed from above/front. Wings spread wide — roughly 14px wide, 8px tall body. Dark purple-black body (#1A0030 / #2E004E), slightly lighter wing membrane (#3D0060). Small red glowing eyes (1x1px each). Wings fully extended outward, slightly angled. Compact and readable at small size.
+> ```
+
+> **`bat_2.svg`**
+> ```
+> Same art style as bat_1, 16x16 pixels, transparent background.
+> Create bat_2: wings folded — bat at lowest point of wing stroke. Wings curved downward, roughly 10px wide at narrowest, body more visible. Same colors as bat_1. Alternating with bat_1 creates a flapping animation.
+> ```
 
 ---
 
 ### Shotgun Pellet — Silver Prayer Bullet
 
-**Size:** 8×8 px. Single sprite — Pygame handles travel direction and optional rotation.
+**Size:** 8×8 px. Single sprite — runtime rotation applied.
 
-**Description:** Small oval bullet, slightly pointed at left tip (travel direction), flat-ish at right. Silver metallic body (#C0C0C0 mid, #E0E0E0 highlight on upper edge, #808080 shadow on lower edge). 1px near-white aura border around the entire bullet (#F0F0FF at low contrast). Two tiny dark pixel marks on the body side (1×1 px each, #404040) suggesting engraved prayer text.
-
-> **Prompt:** `silver prayer bullet pixel art, 8x8 pixels, small oval shape slightly pointed at one end, silver metallic shading, faint white glow aura, two tiny engraved mark pixels on side, transparent background, no anti-aliasing`
+> **`pellet.svg`**
+> ```
+> Same pixel art style as player_idle_1, 8x8 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create pellet: small oval silver prayer bullet, slightly pointed at left tip (travel direction). Silver metallic body (#C0C0C0 mid, #E0E0E0 highlight on upper edge, #808080 shadow on lower edge). 1px near-white aura border (#F0F0FF). Two tiny dark 1x1px marks on body side (#404040) suggesting engraved prayer text.
+> ```
 
 ---
 
@@ -389,35 +672,71 @@ Head snapped back 4px in fury (not pain — rage). Cape blown fully open, crimso
 
 **Size:** 16×20 px.
 
-**Description:** Round-bellied glass vial, slightly wider at mid-height than top or bottom. Cork stopper at top (4px tall, round, brown #5C3317 / #7A4A25). Glass body: pale blue-tinted (#B8C8FF exterior highlight, #4169E1 as interior water color at 60% — suggest transparency via checker pattern of 1 blue : 1 very light grey pixel in the glass area). Water fill line visible at 70% of pot height (solid blue below the line, glass-effect above). Tiny cross etched on glass front (2×4 px, #2040A0 dark blue, 1px wide vertical and horizontal).
-
-> **Prompt:** `small round holy water glass vial with cork stopper, full of blue glowing holy water at 70% fill line, pale blue-tinted glass effect, tiny cross etched on glass front, pixel art 16x20 pixels, gothic inventory item style, transparent background, no anti-aliasing`
+> **`water_full.svg`**
+> ```
+> Same pixel art style as player_idle_1, 16x20 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create water_full: round-bellied glass vial, wider at mid-height. Cork stopper at top (4px tall, brown #5C3317 / #7A4A25). Glass body pale blue-tinted (#B8C8FF exterior highlight). Holy water fill visible at 70% of pot height — solid blue (#4169E1) below fill line, glass-effect above (checker: 1 blue : 1 very light grey pixel). Tiny cross etched on glass front (2x4px, #2040A0, 1px lines).
+> ```
 
 ---
 
 ### Holy Water Pot — Empty
 
-**Size:** 16×20 px. Same shape as full.
+**Size:** 16×20 px.
 
-**Description:** Same cork. Glass body: pale grey tint (#D8D8E0 exterior, interior is the same checker but with light grey instead of blue). No water fill line. Cross etching still visible. Conveys emptiness.
-
-> **Prompt:** `same small round glass vial with cork stopper, empty with no water inside, pale grey-tinted glass effect, cross etching on front still visible, pixel art 16x20 pixels, transparent background, no anti-aliasing`
+> **`water_empty.svg`**
+> ```
+> Same art style as water_full, 16x20 pixels, transparent background.
+> Create water_empty: same cork. Same glass shape. Pale grey tint (#D8D8E0 exterior) instead of blue. Interior checker uses light grey instead of blue — no fill line. Cross etching still visible. Conveys emptiness.
+> ```
 
 ---
 
 ### Holy Water Splash — Impact Animation
 
-**Size:** 48×32 px per frame (wider than tall — horizontal ground spread).
+**Size:** 48×32 px per frame (wider than tall).
 
-**3 frames:**
+> **`splash_1.svg`**
+> ```
+> Same pixel art style as player_idle_1, 48x32 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create splash_1: impact burst — tiny bright blue pixel burst at center-bottom (8x8 area, #B0C8FF center, #4169E1 around it). 4-6 small droplet pixels (1-2px each) scattered upward and outward in a starburst.
+> ```
 
-**Frame 1 (impact):** Tiny burst at center-bottom of sprite. 8×8 area of bright blue pixels (#B0C8FF center, #4169E1 around it) radiating from a central point. 4–6 small droplet pixels (1–2px each) scattered upward and outward in a starburst from center.
+> **`splash_2.svg`**
+> ```
+> Same art style, 48x32 pixels, transparent background.
+> Create splash_2: puddle spreading — oval blue pool forming at center-bottom (20x8px, #4169E1 fill, #B0C8FF highlight pixels along top edge). 8-10 droplet pixels in semicircle arc above pool at varied heights.
+> ```
 
-**Frame 2 (spread):** Main puddle forming — oval blue pool at center-bottom (20×8 px, #4169E1 fill, #B0C8FF highlight pixels along top edge). 8–10 droplet pixels in semicircle arc rising upward above pool, at varied heights. Pool edges are 1px lighter than center.
+> **`splash_3.svg`**
+> ```
+> Same art style, 48x32 pixels, transparent background.
+> Create splash_3: dissipating — pool shrinking to 12x4px, lighter blue (#8CA8D0). Outer droplets gone. 4-6 faint mist pixels (#D0E0FF, 1px each) at edges above pool center.
+> ```
 
-**Frame 3 (dissipate):** Pool shrinking to 12×4 px, more transparent (lighter blue #8CA8D0). Outer droplets gone. 4–6 faint mist pixels (#D0E0FF, 1px each) at edges above pool. Center 4px of pool still bright.
+---
 
-> **Prompt:** `holy water splash impact animation frame [1/2/3], [tiny blue burst starburst droplets / expanding oval puddle with arc of droplets / shrinking dissipating puddle with faint mist pixels], blue glowing water, pixel art 48x32 pixels, transparent background, gothic magic effect style, no anti-aliasing`
+### Holy Water Puddle — DoT Zone
+
+**Size:** 32×32 px. Single sprite — runtime scale creates the pulse effect.
+
+> **`puddle.svg`**
+> ```
+> Same pixel art style as player_idle_1, 32x32 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create puddle: oval glowing blue holy water puddle on the ground, viewed from slightly above. Outer ring: faint blue (#4169E1, 1px, slightly irregular/organic pixel edge). Inner area: lighter blue (#8CA8D0) with a few brighter highlight pixels (#B0C8FF) scattered near center suggesting glow. No sharp geometric circle — organic pixel oval shape. Subtle and readable.
+> ```
+
+---
+
+### Blood Decal — Kill Splatter
+
+**Size:** 24×16 px. Single sprite, drawn on ground after enemy death.
+
+> **`blood_decal.svg`**
+> ```
+> Same pixel art style as player_idle_1, 24x16 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create blood_decal: dark blood splatter on the ground, viewed from above. Irregular pixel blob — not a circle, organic asymmetric shape. Dark red (#5C0000) as base, blood red mid (#8B0000) for larger pixels, 1-2 brighter red (#C41E3A) highlight pixels near center. 3-5 small 1px satellite droplet pixels scattered outward from the main blob. Flat, reads as a ground stain.
+> ```
 
 ---
 
@@ -425,45 +744,75 @@ Head snapped back 4px in fury (not pain — rage). Cape blown fully open, crimso
 
 ---
 
+### Tombstone — Arena Obstacle
+
+**Size:** 36×52 px. Single sprite.
+
+> **`tombstone.svg`**
+> ```
+> Same pixel art style as player_idle_1, 36x52 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create tombstone: gothic stone tombstone viewed slightly from the front. Rounded arch top, flat-ish sides, wider base slab. Stone palette: #4A4A4A shadow, #7A7A7A mid, #B0B0B0 highlight on upper/left edges. A small carved gothic cross near the top (8x10px, recessed — slightly darker than surface, #4A4A4A). 2-3 horizontal crack lines across the stone face (1px, #3A3A3A). Slight moss/dark stain in lower corners (#2A3A2A, 2-3 pixels). Base slab slightly wider than body.
+> ```
+
+---
+
 ### Italian Fountain — State 1: Flowing (3-frame loop)
 
 **Size:** 64×64 px.
 
-**Description:** Baroque stone fountain. Viewed at slight top-down angle (isometric-adjacent but mostly front-facing).
+> **`fountain_flow_1.svg`**
+> ```
+> Same pixel art style as player_idle_1, 64x64 pixels, transparent background, hard pixel edges, no anti-aliasing, slight top-down angle view.
+> Create fountain_flow_1: baroque stone fountain. Round base basin (50px wide, 12px tall, stone #4A4A4A / #7A7A7A / #B0B0B0, rim lip highlighted, interior dark #2C2C2C). Central stone pedestal (8px wide column, 20px tall, same stone). Mid bowl at top of pedestal (20px wide, 6px tall). Gothic cross finial at very top (8x8px, tarnished gold #C8A84B). Water: 4px wide column of blue-white pixels (#B0C8FF / #4169E1) falling from mid bowl rim to base basin. 2-3 splash pixels (#B0C8FF) scattered at base where water lands.
+> ```
 
-- Base basin: round, 50px wide at widest, 12px tall. Stone texture (#4A4A4A shadow, #7A7A7A mid, #B0B0B0 highlight on rim lip). Interior basin darker (#2C2C2C).
-- Central pedestal: 8px wide column rising from basin center, 20px tall, same stone palette.
-- Mid bowl: at top of pedestal, 20px wide, 6px tall bowl, same stone. Basin interior dark.
-- Column finial: small gothic cross at very top, 8×8 px, tarnished gold (#C8A84B).
-- Water: cascades from mid bowl over rim into base basin. Represented as a 4px wide column of blue-white pixels (#B0C8FF highlights, #4169E1 base) falling from mid bowl rim to base basin. Where water hits base, 2–3 splash pixels (#B0C8FF) scatter sideways.
+> **`fountain_flow_2.svg`**
+> ```
+> Same art style as fountain_flow_1, 64x64 pixels, transparent background.
+> Create fountain_flow_2: identical structure to fountain_flow_1 but water column pixel pattern shifted 3px downward (animation frame). Splash pixels at base in alternate positions.
+> ```
 
-**3 animation frames:** Water pixel column shifts downward by 3px each frame (cycling back). Splash pixels at base alternate positions.
-
-> **Prompt:** `baroque stone water fountain, round base basin, central stone pedestal with smaller mid bowl and gothic cross finial in tarnished gold, water cascading from mid bowl to base basin as blue-white pixel stream, slight gothic architectural detail on basin rim, pixel art 64x64 pixels, slight top-down angle view, gothic stone palette, transparent background, no anti-aliasing` + suffix
+> **`fountain_flow_3.svg`**
+> ```
+> Same art style as fountain_flow_1, 64x64 pixels, transparent background.
+> Create fountain_flow_3: identical structure, water column shifted another 3px down (loops back to fountain_flow_1). Splash pixels in third alternate arrangement.
+> ```
 
 ---
 
 ### Italian Fountain — State 2: Empty/Dry
 
-**Size:** 64×64 px. Same structure as State 1.
+**Size:** 64×64 px.
 
-**Changes:** No water pixels anywhere. Stone slightly darker overall (all mid tones shifted 1 shade darker — conveys dry stone). 3–4 darker grey pixels (#3A3A3A) along interior edges of both basin and mid bowl (dry residue marks).
-
-> **Prompt:** `same baroque stone fountain, completely dry and empty, no water, darker dry stone texture, faint dry residue marks as darker pixels along basin interior edges, pixel art 64x64 pixels, transparent background, no anti-aliasing` + suffix
+> **`fountain_empty.svg`**
+> ```
+> Same art style as fountain_flow_1, 64x64 pixels, transparent background.
+> Create fountain_empty: identical fountain structure but completely dry. No water pixels anywhere. Stone tones all shifted 1 shade darker (dry stone). 3-4 darker grey pixels (#3A3A3A) along interior edges of both basin and mid bowl as dry residue marks.
+> ```
 
 ---
 
-### Italian Fountain — State 3: Refilling (3 frames → transitions to State 1)
+### Italian Fountain — State 3: Refilling (3 frames)
 
 **Size:** 64×64 px.
 
-**Frame 1 (trickle):** 1–2 blue pixels at the very rim of the mid bowl, dripping. Base basin interior has 4px wide × 2px tall shallow puddle at bottom center.
+> **`fountain_refill_1.svg`**
+> ```
+> Same art style as fountain_flow_1, 64x64 pixels, transparent background.
+> Create fountain_refill_1: fountain beginning to refill — 1-2 blue pixels at mid bowl rim as a faint trickle. Base basin has a tiny 4px wide x 2px tall shallow puddle at center bottom only.
+> ```
 
-**Frame 2 (flow):** 3px wide stream from mid bowl rim. Base basin puddle now 12px wide × 4px tall.
+> **`fountain_refill_2.svg`**
+> ```
+> Same art style as fountain_flow_1, 64x64 pixels, transparent background.
+> Create fountain_refill_2: flow growing — 3px wide stream from mid bowl rim. Base basin puddle now 12px wide x 4px tall.
+> ```
 
-**Frame 3 (nearly full):** 4px wide stream, continuous. Base basin puddle 24px wide × 6px tall. Mid bowl has visible water level (4px of blue inside bowl). One more frame and it reaches State 1.
-
-> **Prompt:** `baroque stone fountain slowly refilling, [frame 1: tiny 1-2 pixel water trickle at bowl rim, shallow puddle at base / frame 2: small stream 3px wide, medium puddle / frame 3: 4px stream, large puddle nearly at basin level], pixel art 64x64 pixels, transparent background, no anti-aliasing` + suffix
+> **`fountain_refill_3.svg`**
+> ```
+> Same art style as fountain_flow_1, 64x64 pixels, transparent background.
+> Create fountain_refill_3: nearly full — 4px wide stream continuous. Base basin puddle 24px wide x 6px tall. Mid bowl has visible water level (4px of blue inside bowl). Next frame transitions to fountain_flow_1.
+> ```
 
 ---
 
@@ -471,13 +820,51 @@ Head snapped back 4px in fury (not pain — rage). Cape blown fully open, crimso
 
 ---
 
+### Face Portrait — 3 HP Stages
+
+**Size:** 72×72 px each. Detailed face of the player character.
+
+> **`portrait_healthy.svg`**
+> ```
+> Same pixel art style as player_idle_1, 72x72 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create portrait_healthy: close-up face portrait of the vampire hunter (HP ≥ 75%). Dark purple background panel with rounded corners. Warm-skinned angular face: copper-red short messy hair, small determined eyes with brown irises and white glint pixels, confident expression with a slight smirk. Clean face, no damage. Coat collar visible at bottom. Tarnished gold border frame. Lit from top-left with slight rim light on hair.
+> ```
+
+> **`portrait_damaged.svg`**
+> ```
+> Same pixel art style as player_idle_1, 72x72 pixels, transparent background.
+> Create portrait_damaged: same vampire hunter face (HP 30-74%). Same composition as portrait_healthy but: eyes narrowed and worried, slight frown/tense mouth (arc downward), one small sweat droplet pixel on temple. A single thin scratch mark on cheek (2 diagonal dark pixels). Slightly paler skin tone. Same dark purple background, blood-red border frame.
+> ```
+
+> **`portrait_critical.svg`**
+> ```
+> Same pixel art style as player_idle_1, 72x72 pixels, transparent background.
+> Create portrait_critical: same vampire hunter face (HP < 30%). Barely-open eyes, desperate grimace, mouth corner turned down. Two blood streak lines on face (2px wide, 1px wide, dark red #8B0000). Noticeably paler skin. Dark red (near-black) background panel. Bright red border frame.
+> ```
+
+---
+
+### HUD Shotgun Sprite
+
+**Size:** 50×46 px. Displayed in bottom HUD panel next to the portrait.
+
+> **`hud_gun.svg`**
+> ```
+> Same pixel art style as player_idle_1, 50x46 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create hud_gun: side-view of a sawn-off double-barrel shotgun, the same weapon the player carries. Wood stock on the left (brown #5C3317 / #7A4A25 / #3B1F0F, angled wedge shape). Dark metal receiver body in the center (#505060 / #707080). Two parallel horizontal barrels extending to the right (silver-grey #9A9A9A / #C0C0C0 / #707070, each barrel about 4px tall with a 2px gap between them). Muzzle end at the far right with a 2px dark cap. Trigger guard: small circular outline below receiver (#404050). Wood and metal clearly distinct. Compact, readable at small HUD size.
+> ```
+
+---
+
 ### HP Bar
 
 **Size:** 128×16 px.
 
-**Description:** Gothic stone frame border, 3px thick on all sides. Border: #2C2C2C with 1px #606060 highlight on top and left inner edges. Interior fill area: 122×10 px. Fill: blood red (#8B0000) for current HP, very dark red (#200000) for missing HP portion. Small white skull icon (8×8 px, simple pixelated skull shape, #E8DCC8) anchored to left end, inside the border.
-
-> **Prompt:** `gothic stone frame HP health bar UI element, 128x16 pixels, dark stone border with slight inner highlight, blood red fill for health, very dark red for missing health, small white pixel skull icon on left end, pixel art, transparent background, no anti-aliasing`
+> **`hp_bar.svg`**
+> ```
+> Same pixel art style as player_idle_1, 128x16 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create hp_bar: gothic stone frame border (3px thick all sides, #2C2C2C with 1px #606060 highlight on top and left inner edges). Interior fill area 122x10px — leave it empty/transparent (Pygame fills it at runtime). Small white pixel skull icon (8x8px, simple pixelated skull shape, #E8DCC8) anchored to left end inside the border.
+> ```
 
 ---
 
@@ -485,30 +872,23 @@ Head snapped back 4px in fury (not pain — rage). Cape blown fully open, crimso
 
 **Size:** 200×32 px.
 
-**Description:** Parchment scroll. Yellowed parchment (#D4C89A mid, #E8DCA8 highlight, #A89060 shadow at rolled ends). Both left and right ends show a rolled scroll cap (12px wide, oval, same parchment color with shadow suggesting the roll). Dark red border line (#5C0000) runs along top and bottom edge of the flat scroll area. Center text area (140×20 px) is flat parchment — Pygame renders wave number text here at runtime. No text in the generated sprite.
-
-> **Prompt:** `gothic parchment scroll banner, 200x32 pixels, yellowed parchment with rolled ends left and right, dark red border lines on top and bottom edges, flat empty center area for text, pixel art, transparent background, no anti-aliasing`
+> **`wave_banner.svg`**
+> ```
+> Same pixel art style as player_idle_1, 200x32 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create wave_banner: parchment scroll. Yellowed parchment (#D4C89A / #E8DCA8 / #A89060). Both left and right ends show a rolled scroll cap (12px wide oval, same parchment colors with shadow suggesting the roll). Dark red border line (#5C0000, 1px) along top and bottom of the flat scroll area. Center text area (140x20px) is flat empty parchment — Pygame renders text here at runtime. No text in the sprite.
+> ```
 
 ---
 
-### Upgrade Card
+### Upgrade Card Frame
 
 **Size:** 96×128 px.
 
-**Description:**
-- Border: 6px gothic ornate frame. Dark stone (#1A0A00) with 4 gold filigree corner decorations (small 8×8 swirl/flourish pattern in #C8A84B at each corner).
-- Interior background: dark purple (#150028).
-- Icon area: 32×32 px centered horizontally, positioned at top third of interior (starting ~16px from interior top). Bordered by a thin 1px gold line (#C8A84B).
-- Text area: remaining interior space below icon (roughly 32×48 px). Empty — Pygame renders upgrade name and description at runtime.
-- Overall feel: a collectible card from a gothic trading card game.
-
-> **Prompt:** `gothic upgrade card frame, 96x128 pixels, dark stone border with small gold filigree swirl decorations at each corner, dark purple interior, thin gold-bordered 32x32 icon display area in upper third, empty text area below, pixel art, Castlevania style UI card, transparent background, no anti-aliasing`
-
----
-
-### Holy Water Counter (HUD)
-
-Reuses the **Holy Water Pot — Full** sprite (16×20 px) × 3 displayed in a row. When a charge is spent, that slot switches to the **Holy Water Pot — Empty** sprite. No additional sprite needed.
+> **`upgrade_card.svg`**
+> ```
+> Same pixel art style as player_idle_1, 96x128 pixels, transparent background, hard pixel edges, no anti-aliasing.
+> Create upgrade_card: gothic collectible card frame. Border: 6px ornate dark stone frame (#1A0A00) with small 8x8 gold filigree swirl decorations at each corner (#C8A84B). Interior background: dark purple (#150028). Icon area: 32x32px centered horizontally, positioned in upper third of interior (~16px from top), bordered by a thin 1px gold line (#C8A84B) — leave interior transparent (Pygame draws the icon at runtime). Text area below icon: empty, transparent. Overall: gothic trading card aesthetic.
+> ```
 
 ---
 
@@ -545,16 +925,16 @@ Multi-frame sprites use the suffix `_1`, `_2`, … before `.svg`. Convert each S
 | Dracula P2 damaged | 48×64 | 1 | `dracula_p2_damaged.svg` | scaled 1.5× at runtime |
 | Dracula P2 death | 48×64 | 5 | `dracula_p2_death_1.svg` … `dracula_p2_death_5.svg` | scaled 1.5× at runtime |
 | Silver cross | 24×24 | 1 | `cross.svg` | runtime rotation |
+| Cross pickup (ground) | 20×20 | 1 | `cross_pickup.svg` | |
+| Heal pickup | 20×20 | 2 | `heal_1.svg` `heal_2.svg` | pulse via runtime scale |
 | Shotgun pellet | 8×8 | 1 | `pellet.svg` | runtime rotation |
 | Holy water pot full | 16×20 | 1 | `water_full.svg` | |
 | Holy water pot empty | 16×20 | 1 | `water_empty.svg` | |
 | Holy water splash | 48×32 | 3 | `splash_1.svg` `splash_2.svg` `splash_3.svg` | |
-| Holy water puddle (DoT) | 32×32 | 1 | `puddle.svg` | runtime scale for pulse |
-| Bat | 16×16 | 2 | `bat_1.svg` `bat_2.svg` | runtime rotation for direction |
+| Holy water puddle (DoT) | 32×32 | 1 | `puddle.svg` | pulse via runtime scale |
+| Bat projectile | 16×16 | 2 | `bat_1.svg` `bat_2.svg` | runtime rotation |
 | Blood decal | 24×16 | 1 | `blood_decal.svg` | ground splatter on kill |
 | Tombstone | 36×52 | 1 | `tombstone.svg` | map obstacle |
-| Heal pickup | 20×20 | 2 | `heal_1.svg` `heal_2.svg` | pulsing animation |
-| Cross pickup | 20×20 | 1 | `cross_pickup.svg` | ground drop |
 | Fountain flowing | 64×64 | 3 | `fountain_flow_1.svg` … `fountain_flow_3.svg` | loop |
 | Fountain empty | 64×64 | 1 | `fountain_empty.svg` | |
 | Fountain refilling | 64×64 | 3 | `fountain_refill_1.svg` … `fountain_refill_3.svg` | → transitions to flowing |

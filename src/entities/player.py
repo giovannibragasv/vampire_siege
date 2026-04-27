@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 import pygame
 from src.settings import (
     PLAYER_SPEED, PLAYER_MAX_HP, HOLY_WATER_MAX,
@@ -17,6 +18,11 @@ from src.weapons.stake import Stake
 class Player:
     WIDTH  = 32
     HEIGHT = 48
+    IDLE_FRAME_MS = 450
+    WALK_FRAME_MS = 140
+    ACTION_FRAME_MS = 120
+    DAMAGE_FRAME_MS = 220
+    DEATH_FRAME_MS = 360
 
     def __init__(self, cx, cy):
         self.rect = pygame.Rect(0, 0, self.WIDTH, self.HEIGHT)
@@ -28,6 +34,18 @@ class Player:
         self._facing_right = True
         self._invincible_timer = 0
         self.just_damaged = False   # read by Game to trigger shake
+        self._move_dx = 0.0
+        self._move_dy = 0.0
+        self._idle_timer = 0
+        self._idle_frame_index = 0
+        self._walk_timer = 0
+        self._walk_frame_index = 0
+        self._action_frames = None
+        self._action_timer = 0
+        self._action_frame_index = 0
+        self._action_frame_ms = self.ACTION_FRAME_MS
+        self._dead = False
+        self._death_finished = False
 
         # Weapons
         self._active_weapon = "shotgun"
@@ -53,13 +71,23 @@ class Player:
         self._cam_y = 0
         self._facing_down = True
 
-        self._surface = self._make_surface()
+        self._idle_frames_front = self._load_frames("player_idle", 2)
+        self._walk_frames_front = self._load_frames("player_walk", 4)
+        self._walk_frames_back = self._load_frames("player_back_walk", 4)
+        self._idle_frames_back = [self._walk_frames_back[1]]
+        self._fire_frames = self._load_frames("player_fire", 2)
+        self._throw_frames = self._load_frames("player_throw", 2)
+        self._damaged_frames = self._load_named_frames(["player_damaged.png"])
+        self._death_frames = self._load_frames("player_death", 4)
+        self._surface = self._idle_frames_front[0]
 
     # ------------------------------------------------------------------
     # Input
     # ------------------------------------------------------------------
 
     def handle_event(self, event, cam_x=0, cam_y=0):
+        if self._dead:
+            return
         self._cam_x = cam_x
         self._cam_y = cam_y
         if event.type == pygame.KEYDOWN:
@@ -76,9 +104,11 @@ class Player:
             cx, cy = self.rect.center
             if event.button == 1:
                 if self._active_weapon == "shotgun":
-                    self.shotgun.handle_fire(cx, cy, wx, wy)
+                    if self.shotgun.handle_fire(cx, cy, wx, wy):
+                        self._play_action(self._fire_frames, self.ACTION_FRAME_MS)
                 else:
-                    self.holy_water.handle_fire(cx, cy, wx, wy)
+                    if self.holy_water.handle_fire(cx, cy, wx, wy):
+                        self._play_action(self._throw_frames, self.ACTION_FRAME_MS)
             elif event.button == 3:
                 self.stake.handle_fire(cx, cy, wx, wy)
 
@@ -91,8 +121,13 @@ class Player:
         self._dodge_cooldown   = max(0, self._dodge_cooldown - dt)
         self.just_damaged = False
 
+        if self._dead:
+            self._update_animation(dt)
+            return
+
         self._move(dt, arena)
         self._update_facing()
+        self._update_animation(dt)
 
         if arena.try_refill_water(self.rect):
             self.holy_water.refill()
@@ -113,6 +148,8 @@ class Player:
             self._dodge_timer -= dt
             if self._dodge_timer <= 0:
                 self._dodge_active = False
+            self._move_dx = self._dodge_vx
+            self._move_dy = self._dodge_vy
             spd = self.speed * DODGE_SPEED_MULT * dt / 16
             self.rect.x += int(self._dodge_vx * spd)
             self.rect.y += int(self._dodge_vy * spd)
@@ -125,6 +162,8 @@ class Player:
             if dx != 0 and dy != 0:
                 f = 1 / math.sqrt(2)
                 dx *= f; dy *= f
+            self._move_dx = dx
+            self._move_dy = dy
             self.rect.x += int(dx * self.speed * dt / 16)
             self.rect.y += int(dy * self.speed * dt / 16)
 
@@ -157,6 +196,99 @@ class Player:
         self._facing_right = mx >= screen_cx
         self._facing_down  = my >= screen_cy
 
+    def _update_animation(self, dt):
+        if self._dead:
+            self._update_death_animation(dt)
+            return
+
+        if self._action_frames:
+            self._update_action_animation(dt)
+            return
+
+        moving = abs(self._move_dx) > 0 or abs(self._move_dy) > 0
+        if not moving:
+            self._walk_timer = 0
+            self._walk_frame_index = 0
+            idle_frames = self._current_idle_frames()
+            self._idle_timer += dt
+            if self._idle_timer >= self.IDLE_FRAME_MS:
+                steps = self._idle_timer // self.IDLE_FRAME_MS
+                self._idle_timer %= self.IDLE_FRAME_MS
+                self._idle_frame_index = (self._idle_frame_index + steps) % len(idle_frames)
+            self._surface = idle_frames[self._idle_frame_index % len(idle_frames)]
+            return
+
+        self._idle_timer = 0
+        self._idle_frame_index = 0
+        self._walk_timer += dt
+        if self._walk_timer >= self.WALK_FRAME_MS:
+            frames = self._current_frames()
+            steps = self._walk_timer // self.WALK_FRAME_MS
+            self._walk_timer %= self.WALK_FRAME_MS
+            self._walk_frame_index = (self._walk_frame_index + steps) % len(frames)
+
+        frames = self._current_frames()
+        self._surface = frames[self._walk_frame_index % len(frames)]
+
+    def _play_action(self, frames, frame_ms):
+        if self._dead:
+            return
+        self._action_frames = frames
+        self._action_timer = 0
+        self._action_frame_index = 0
+        self._action_frame_ms = frame_ms
+        self._surface = frames[0]
+
+    def _update_action_animation(self, dt):
+        self._action_timer += dt
+        if self._action_timer >= self._action_frame_ms:
+            steps = self._action_timer // self._action_frame_ms
+            self._action_timer %= self._action_frame_ms
+            self._action_frame_index += steps
+
+        if self._action_frame_index >= len(self._action_frames):
+            self._action_frames = None
+            self._action_timer = 0
+            self._action_frame_index = 0
+            self._update_animation(0)
+            return
+
+        self._surface = self._action_frames[self._action_frame_index]
+
+    def start_death(self):
+        if self._dead:
+            return
+        self._dead = True
+        self._death_finished = False
+        self._dodge_active = False
+        self._trail.clear()
+        self._move_dx = 0.0
+        self._move_dy = 0.0
+        self._action_frames = None
+        self._action_timer = 0
+        self._action_frame_index = 0
+        self._surface = self._death_frames[0]
+
+    @property
+    def death_finished(self):
+        return self._death_finished
+
+    def _update_death_animation(self, dt):
+        if self._death_finished:
+            self._surface = self._death_frames[-1]
+            return
+
+        self._action_timer += dt
+        if self._action_timer >= self.DEATH_FRAME_MS:
+            steps = self._action_timer // self.DEATH_FRAME_MS
+            self._action_timer %= self.DEATH_FRAME_MS
+            self._action_frame_index = min(
+                self._action_frame_index + steps,
+                len(self._death_frames) - 1,
+            )
+        self._surface = self._death_frames[self._action_frame_index]
+        self._death_finished = self._action_frame_index >= len(self._death_frames) - 1
+
     # ------------------------------------------------------------------
     # Damage
     # ------------------------------------------------------------------
@@ -167,6 +299,10 @@ class Player:
         self.hp = max(0, self.hp - amount)
         self._invincible_timer = CONTACT_DAMAGE_COOLDOWN_MS
         self.just_damaged = True
+        if self.hp <= 0:
+            self.start_death()
+        else:
+            self._play_action(self._damaged_frames, self.DAMAGE_FRAME_MS)
 
     # ------------------------------------------------------------------
     # Upgrades
@@ -210,17 +346,12 @@ class Player:
                 ghost.set_alpha(alpha)
                 if not self._facing_right:
                     ghost = flip_surface(ghost, flip_x=True, flip_y=False)
-                if not self._facing_down:
-                    ghost = flip_surface(ghost, flip_x=False, flip_y=True)
                 r = ghost.get_rect(center=pos)
                 surface.blit(ghost, r)
 
         img = self._surface.copy()
         if not self._facing_right:
             img = flip_surface(img, flip_x=True, flip_y=False)
-        if not self._facing_down:
-            img = flip_surface(img, flip_x=False, flip_y=True)
-
         # Damage flash (invincible but not rolling)
         if self._invincible_timer > 0 and not self._dodge_active:
             if (self._invincible_timer // 80) % 2 == 0:
@@ -250,7 +381,35 @@ class Player:
             pygame.draw.arc(surface, C_GOLD, arc_rect,
                             _m.pi / 2, _m.pi / 2 + end_angle, 3)
 
-    def _make_surface(self):
+    def _current_frames(self):
+        return self._walk_frames_front if self._facing_down else self._walk_frames_back
+
+    def _current_idle_frames(self):
+        return self._idle_frames_front if self._facing_down else self._idle_frames_back
+
+    def _load_frames(self, prefix, count):
+        return self._load_named_frames(
+            [f"{prefix}_{idx}.png" for idx in range(1, count + 1)]
+        )
+
+    def _load_named_frames(self, filenames):
+        root = Path(__file__).resolve().parents[2]
+        sprite_dir = root / "assets" / "sprites" / "player"
+        frames = []
+        for filename in filenames:
+            frame = None
+            for frame_path in (root / filename, sprite_dir / filename):
+                try:
+                    frame = pygame.image.load(frame_path.as_posix()).convert_alpha()
+                    if frame.get_size() != (self.WIDTH, self.HEIGHT):
+                        frame = pygame.transform.scale(frame, (self.WIDTH, self.HEIGHT))
+                    break
+                except (FileNotFoundError, pygame.error):
+                    continue
+            frames.append(frame if frame is not None else self._make_placeholder_surface())
+        return frames
+
+    def _make_placeholder_surface(self):
         surf = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
         pygame.draw.rect(surf, (92, 51, 23),
                          (6, 12, self.WIDTH - 12, self.HEIGHT - 12), border_radius=4)

@@ -11,6 +11,7 @@ from src.camera import Camera
 class State:
     MENU      = "menu"
     PLAYING   = "playing"
+    DYING     = "dying"
     UPGRADE   = "upgrade"
     GAME_OVER = "game_over"
     WIN       = "win"
@@ -36,6 +37,8 @@ class Game:
         # Wave banner
         self._banner_text  = ""
         self._banner_timer = 0
+        self._death_timer  = 0
+        self._death_sequence_ms = 3200
 
         self._arena         = None
         self._player        = None
@@ -71,6 +74,7 @@ class Game:
         self._hud          = HUD(self._player, self._wave_manager)
         self._camera.update(self._player.rect)
         self._show_banner(f"WAVE {self.wave_index + 1}")
+        self._death_timer = 0
         self.state = State.PLAYING
 
     def _enter_upgrade(self):
@@ -113,6 +117,13 @@ class Game:
     def _show_banner(self, text):
         self._banner_text  = text
         self._banner_timer = WAVE_BANNER_MS
+
+    def _enter_dying(self):
+        self._death_timer = 0
+        if self._player:
+            self._player.start_death()
+        self.trigger_shake(intensity=9, duration_ms=380)
+        self.state = State.DYING
 
     def trigger_shake(self, intensity=6, duration_ms=300):
         self._shake_timer     = max(self._shake_timer, duration_ms)
@@ -162,6 +173,16 @@ class Game:
         if self._shake_timer == 0:
             self._shake_intensity = 0
 
+        if self.state == State.DYING:
+            self._death_timer += dt
+            self._player._cam_x = self._camera.x
+            self._player._cam_y = self._camera.y
+            self._player.update(dt, self._arena)
+            self._camera.update(self._player.rect)
+            if self._death_timer >= self._death_sequence_ms:
+                self.state = State.GAME_OVER
+            return
+
         if self.state not in (State.PLAYING, State.INFINITE):
             return
 
@@ -178,7 +199,7 @@ class Game:
             self._player.just_damaged = False
 
         if self._player.hp <= 0:
-            self.state = State.GAME_OVER
+            self._enter_dying()
             return
 
         if self.state == State.PLAYING and self._wave_manager.wave_cleared():
@@ -196,7 +217,7 @@ class Game:
             self.screen.fill(C_VOID)
             self._draw_menu()
 
-        elif self.state in (State.PLAYING, State.INFINITE, State.UPGRADE):
+        elif self.state in (State.PLAYING, State.INFINITE, State.DYING, State.UPGRADE):
             self._draw_world()
 
         elif self.state == State.GAME_OVER:
@@ -207,7 +228,8 @@ class Game:
             self.screen.fill(C_VOID)
             self._draw_win()
 
-        self._draw_crosshair()
+        if self.state in (State.PLAYING, State.INFINITE, State.UPGRADE):
+            self._draw_crosshair()
         pygame.display.flip()
 
     def _draw_world(self):
@@ -223,8 +245,11 @@ class Game:
             ox = random.randint(-self._shake_intensity, self._shake_intensity)
             oy = random.randint(-self._shake_intensity, self._shake_intensity)
 
-        self.screen.fill(C_VOID)
-        self.screen.blit(self._world_surface, (ox, oy), self._camera.viewport)
+        if self.state == State.DYING:
+            self._draw_death_view(ox, oy)
+        else:
+            self.screen.fill(C_VOID)
+            self.screen.blit(self._world_surface, (ox, oy), self._camera.viewport)
 
         # --- HUD (screen-space, no shake) ---
         if self.state in (State.PLAYING, State.INFINITE):
@@ -232,6 +257,30 @@ class Game:
             self._draw_wave_banner()
         elif self.state == State.UPGRADE:
             self._upgrade_menu.draw(self.screen)
+
+    def _draw_death_view(self, ox, oy):
+        progress = min(1.0, self._death_timer / self._death_sequence_ms)
+        zoom = 1.0 + 0.24 * progress
+        view = self._world_surface.subsurface(self._camera.viewport).copy()
+        scaled_w = int(SCREEN_WIDTH * zoom)
+        scaled_h = int(SCREEN_HEIGHT * zoom)
+        view = pygame.transform.scale(view, (scaled_w, scaled_h))
+
+        self.screen.fill(C_VOID)
+        self.screen.blit(
+            view,
+            (
+                (SCREEN_WIDTH - scaled_w) // 2 + ox,
+                (SCREEN_HEIGHT - scaled_h) // 2 + oy,
+            ),
+        )
+
+        fade_start = 0.82
+        if progress > fade_start:
+            alpha = int(255 * (progress - fade_start) / (1.0 - fade_start))
+            fade = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            fade.fill((0, 0, 0, alpha))
+            self.screen.blit(fade, (0, 0))
 
     def _draw_wave_banner(self):
         if self._banner_timer <= 0:

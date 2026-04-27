@@ -113,7 +113,8 @@ class WaveManager:
             e.update(dt, self.player, self.arena)
 
         # Weapon collision (via player method)
-        self.player.update_weapons_with_enemies(dt, self.arena, self.enemies)
+        live_enemies = [e for e in self.enemies if e.alive]
+        self.player.update_weapons_with_enemies(dt, self.arena, live_enemies)
 
         # Detect deaths: spawn decals and accumulate score
         for e in self.enemies:
@@ -123,7 +124,10 @@ class WaveManager:
                 self.kills += 1
                 self.score += getattr(e, "_score_value", 10)
 
-        self.enemies = [e for e in self.enemies if e.alive]
+        self.enemies = [
+            e for e in self.enemies
+            if e.alive or not getattr(e, "remove_ready", True)
+        ]
 
         # Update and cull decals
         for d in self._decals:
